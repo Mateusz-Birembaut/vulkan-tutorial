@@ -25,94 +25,6 @@ void VulkanApp::mainLoop() {
 	vkDeviceWaitIdle(m_device);
 }
 
-void VulkanApp::drawFrame() {
-	// attendre frame precedente fini
-	vkWaitForFences(m_device, 1, &m_inFlightFence, VK_TRUE, UINT64_MAX); // bloque le cpu (host)
-	// prend un array de fence, ici 1 seule, VK_TRUE, on attend toutes les fences
-	// UINT64_MAX en gros desactive le timeout tellement c grand
-	vkResetFences(m_device, 1, &m_inFlightFence); // on débloque l'éxécution manuellement
-
-	// prendre une image de la swapchain
-	uint32_t imageIndex; // index de la vkimagedans le swap chain images
-	vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
-	// m_imageAvailableSemaphore signaled quand on a fini
-
-	// record un command buffer pour draw sur l'image
-	vkResetCommandBuffer(m_commandBuffer, 0);
-	recordCommandBuffer(m_commandBuffer, imageIndex);
-
-	// submit l'image
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-	VkSemaphore waitSemaphores[]{m_imageAvailableSemaphore};
-	VkPipelineStageFlags waitStages[]{VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-	// on veut attendre au niveau de l'écriture dans le frame buffer
-	// ca veut dire que le gpu peut executer des shaders juste on écrit pas encore
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
-
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_commandBuffer;
-	// les buffers a submit pour execution
-
-	VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphore};
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
-	// on va signal ce sémaphore apres que le command buffer soit executé
-
-	if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFence) != VK_SUCCESS) {
-		throw std::runtime_error("failed to submit draw command buffer!");
-	}
-
-	// presenter l'image a la swap chain image pour affichage
-	VkPresentInfoKHR presentInfo{};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-	int x = 4;
-
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = signalSemaphores;
-	// quels semaphores on va attendre avant de presenter l'image
-	// tant que l'image n'est pas rendu, on att
-
-	VkSwapchainKHR swapChains[] = {m_swapChain};
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapChains;
-
-	presentInfo.pImageIndices = &imageIndex;
-	// a quel swap chain on va presenter les images
-	// et quelles images (indices) le plus souvent 1 seule
-
-	presentInfo.pResults = nullptr; // optional
-	// permet de spécifier un array Vkresult
-	// pour savoir si la présentation a marché dans chaque swap chain
-
-	vkQueuePresentKHR(m_presentQueue, &presentInfo);
-}
-
-void VulkanApp::cleanup() { // les queues sont détruites implicitement
-	vkDestroySemaphore(m_device, m_imageAvailableSemaphore, nullptr);
-	vkDestroySemaphore(m_device, m_renderFinishedSemaphore, nullptr);
-	vkDestroyFence(m_device, m_inFlightFence, nullptr);
-	vkDestroyCommandPool(m_device, m_commandPool, nullptr);
-	for (auto frameBuffer : m_swapChainFrameBuffers) {
-		vkDestroyFramebuffer(m_device, frameBuffer, nullptr);
-	}
-	vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
-	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
-	for (auto imageView : m_swapChainImageViews) {
-		vkDestroyImageView(m_device, imageView, nullptr);
-	}
-	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
-	vkDestroyDevice(m_device, nullptr);
-	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-	vkDestroyInstance(m_instance, nullptr);
-	glfwDestroyWindow(m_window);
-	glfwTerminate();
-}
 
 bool VulkanApp::checkValidationLayerSupport() {
 	uint32_t layerCount;
@@ -926,4 +838,95 @@ void VulkanApp::createSyncObjects() {
 	} else {
 		std::cout << "Sync objects created" << '\n';
 	}
+}
+
+void VulkanApp::drawFrame() {
+	// attendre frame precedente fini
+	vkWaitForFences(m_device, 1, &m_inFlightFence, VK_TRUE, UINT64_MAX); // bloque le cpu (host)
+	// prend un array de fence, ici 1 seule, VK_TRUE, on attend toutes les fences
+	// UINT64_MAX en gros desactive le timeout tellement c grand
+	vkResetFences(m_device, 1, &m_inFlightFence); // on débloque l'éxécution manuellement
+
+	// prendre une image de la swapchain
+	uint32_t imageIndex; // index de la vkimagedans le swap chain images
+	vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+	// m_imageAvailableSemaphore signaled quand on a fini
+
+	// record un command buffer pour draw sur l'image
+	vkResetCommandBuffer(m_commandBuffer, 0);
+	recordCommandBuffer(m_commandBuffer, imageIndex);
+
+	// submit l'image
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	VkSemaphore waitSemaphores[]{m_imageAvailableSemaphore};
+	VkPipelineStageFlags waitStages[]{VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+	// on veut attendre au niveau de l'écriture dans le frame buffer
+	// ca veut dire que le gpu peut executer des shaders juste on écrit pas encore
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &m_commandBuffer;
+	// les buffers a submit pour execution
+
+	VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphore};
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+	// on va signal ce sémaphore apres que le command buffer soit executé
+
+	if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFence) != VK_SUCCESS) {
+		throw std::runtime_error("failed to submit draw command buffer!");
+	}
+
+	// presenter l'image a la swap chain image pour affichage
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+	int x = 4;
+
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = signalSemaphores;
+	// quels semaphores on va attendre avant de presenter l'image
+	// tant que l'image n'est pas rendu, on att
+
+	VkSwapchainKHR swapChains[] = {m_swapChain};
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+
+	presentInfo.pImageIndices = &imageIndex;
+	// a quel swap chain on va presenter les images
+	// et quelles images (indices) le plus souvent 1 seule
+
+	presentInfo.pResults = nullptr; // optional
+	// permet de spécifier un array Vkresult
+	// pour savoir si la présentation a marché dans chaque swap chain
+
+	vkQueuePresentKHR(m_presentQueue, &presentInfo);
+}
+
+
+
+void VulkanApp::cleanup() { // les queues sont détruites implicitement
+	vkDestroySemaphore(m_device, m_imageAvailableSemaphore, nullptr);
+	vkDestroySemaphore(m_device, m_renderFinishedSemaphore, nullptr);
+	vkDestroyFence(m_device, m_inFlightFence, nullptr);
+	vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+	for (auto frameBuffer : m_swapChainFrameBuffers) {
+		vkDestroyFramebuffer(m_device, frameBuffer, nullptr);
+	}
+	vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
+	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+	for (auto imageView : m_swapChainImageViews) {
+		vkDestroyImageView(m_device, imageView, nullptr);
+	}
+	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+	vkDestroyDevice(m_device, nullptr);
+	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+	vkDestroyInstance(m_instance, nullptr);
+	glfwDestroyWindow(m_window);
+	glfwTerminate();
 }

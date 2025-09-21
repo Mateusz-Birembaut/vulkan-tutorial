@@ -10,9 +10,12 @@ void VulkanApp::initWindow() {
 	glfwInit(); // init la lib
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // ne pas créer de context openGL
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);   // désactive le resize parce que c'est relou en gros
+	// glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);   // désactive le resize parce que c'est relou en gros
 
 	m_window = glfwCreateWindow(g_screen_width, g_screen_height, "Vulkan Triangle", nullptr, nullptr);
+	glfwSetWindowUserPointer(m_window, this);
+	glfwSetFramebufferSizeCallback(m_window, VulkanApp::framebufferResizeCallback);
+	// callback glfw quand on resize
 }
 
 void VulkanApp::mainLoop() {
@@ -23,6 +26,11 @@ void VulkanApp::mainLoop() {
 	}
 
 	vkDeviceWaitIdle(m_device);
+}
+
+void VulkanApp::framebufferResizeCallback(GLFWwindow* window, int width, int height) {
+	auto app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
+	app->setResized(true);
 }
 
 bool VulkanApp::checkValidationLayerSupport() {
@@ -54,7 +62,7 @@ void VulkanApp::initVulkan() {
 	pickPhysicalDevice();
 	createLogicalDevice();
 	createSwapChain();
-	createImageView();
+	createImageViews();
 	createRenderPass();
 	createGraphicsPipeline();
 	createFrameBuffers();
@@ -365,8 +373,6 @@ void VulkanApp::createSwapChain() {
 
 	if (vkCreateSwapchainKHR(m_device, &swapChainCreateInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create swap chain");
-	} else {
-		std::cout << "Swap chain created" << std::endl;
 	}
 
 	vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr);
@@ -377,7 +383,7 @@ void VulkanApp::createSwapChain() {
 	m_swapChainExtent = extent;
 }
 
-void VulkanApp::createImageView() {
+void VulkanApp::createImageViews() {
 	m_swapChainImageViews.resize(m_swapChainImages.size());
 	for (size_t i = 0; i < m_swapChainImages.size(); i++) {
 		VkImageViewCreateInfo imageViewCreateInfo{};
@@ -405,7 +411,7 @@ void VulkanApp::createImageView() {
 			throw std::runtime_error("failed to create image views!");
 		}
 	}
-	std::cout << "all image views created" << std::endl;
+	// std::cout << "all image views created" << std::endl;
 }
 
 void VulkanApp::createGraphicsPipeline() {
@@ -713,7 +719,7 @@ void VulkanApp::createFrameBuffers() {
 		}
 	}
 
-	std::cout << "Frame buffers created" << '\n';
+	// std::cout << "Frame buffers created" << '\n';
 }
 
 void VulkanApp::createCommandPool() {
@@ -853,12 +859,28 @@ void VulkanApp::drawFrame() {
 	vkWaitForFences(m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX); // bloque le cpu (host)
 	// prend un array de fence, ici 1 seule, VK_TRUE, on attend toutes les fences
 	// UINT64_MAX en gros desactive le timeout tellement c grand
-	vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]); // on débloque l'éxécution manuellement
 
 	// prendre une image de la swapchain
 	uint32_t imageIndex; // index de la vkimagedans le swap chain images
-	vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
 	// m_imageAvailableSemaphore signaled quand on a fini
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+		// VK_ERROR_OUT_OF_DATE_KHR, on peut plus du tout utilisé la swap chain et la surface pour rendre car elles sont devenu incompatible
+		// on la recréer et on skip ce draw
+		// par contre ca peut créer un deadlock, on décale le reset lock apres le check
+		recreateSwapChain();
+		return;
+	} else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+		throw std::runtime_error("failed to acquire swap chain image!");
+	}
+	// result peut être VK_SUBOPTIMAL_KHR, la surface match pas exactement la swap chain
+	// mais on peut quand meme l'utiliser donc on conitnue
+
+	vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]); // on débloque l'éxécution manuellement, ici pour eviter deadlock
+	// on est sur d'avoir une image a draw
+	// si on reset et que recreate swap chain est appelé, alors on sera toujours
+	// sur la fence m_inFlightFences[m_currentFrame] et on sera bloqué par vkWaitForFences
 
 	// record un command buffer pour draw sur l'image
 	vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
@@ -893,8 +915,6 @@ void VulkanApp::drawFrame() {
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-	int x = 4;
-
 	presentInfo.waitSemaphoreCount = 1;
 	presentInfo.pWaitSemaphores = signalSemaphores;
 	// quels semaphores on va attendre avant de presenter l'image
@@ -913,32 +933,69 @@ void VulkanApp::drawFrame() {
 	// pour savoir si la présentation a marché dans chaque swap chain
 
 	vkQueuePresentKHR(m_presentQueue, &presentInfo);
+	// asynchrone, donc le cpu va continuer
+	// et commencer a acquerir une image pour le prochain rendu
 
-	m_currentFrame = (m_currentFrame+1) % g_max_frames_in_flight;
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized) {
+		// la on recréer meme si VK_SUBOPTIMAL_KHR
+		// car on veut le meilleur rendu
+		m_framebufferResized = false;
+		recreateSwapChain();
+		return;
+	} else if (result != VK_SUCCESS) {
+		throw std::runtime_error("failed to present swap chain image!");
+	}
+
+	m_currentFrame = (m_currentFrame + 1) % g_max_frames_in_flight;
 }
 
-void VulkanApp::cleanup() { // les queues sont détruites implicitement
-	
+void VulkanApp::cleanupSwapChain() {
+	for (auto frameBuffer : m_swapChainFrameBuffers) {
+		vkDestroyFramebuffer(m_device, frameBuffer, nullptr);
+	}
+	for (auto imageView : m_swapChainImageViews) {
+		vkDestroyImageView(m_device, imageView, nullptr);
+	}
+	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+}
+
+void VulkanApp::recreateSwapChain() {
+	int width = 0;
+	int height = 0;
+	glfwGetFramebufferSize(m_window, &width, &height);
+	while (width == 0 || height == 0) {
+		glfwGetFramebufferSize(m_window, &width, &height);
+		glfwWaitEvents();
+	}
+	//quand on est minimiser width et height sont a 0, tant que c'est le cas, 
+	// on fait rien, boucle infini, tant qu'on a pas re ouvert
+
+	vkDeviceWaitIdle(m_device);
+
+	cleanupSwapChain();
+
+	createSwapChain();
+	createImageViews();
+	// les images views doivent etre recrée car sont lies au dimensions des images de la swapchain
+	createFrameBuffers();
+	// pareil pour les framebuffers
+}
+
+void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 	vkDeviceWaitIdle(m_device); // pour attendre que toutes les opération vk soient terminées
 
-	for (size_t i = 0; i < g_max_frames_in_flight; i++)
-	{
+	cleanupSwapChain();
+
+	for (size_t i = 0; i < g_max_frames_in_flight; i++) {
 		vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
 		vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
 		vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
 	}
 
 	vkDestroyCommandPool(m_device, m_commandPool, nullptr);
-	for (auto frameBuffer : m_swapChainFrameBuffers) {
-		vkDestroyFramebuffer(m_device, frameBuffer, nullptr);
-	}
 	vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
 	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
-	for (auto imageView : m_swapChainImageViews) {
-		vkDestroyImageView(m_device, imageView, nullptr);
-	}
-	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
 	vkDestroyDevice(m_device, nullptr);
 	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 	vkDestroyInstance(m_instance, nullptr);

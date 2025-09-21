@@ -54,6 +54,8 @@ class VulkanApp {
 		cleanup();
 	}
 
+	void setResized(bool b) { m_framebufferResized = b;}
+
       private:
 	void initWindow();
 
@@ -63,13 +65,15 @@ class VulkanApp {
 	void pickPhysicalDevice();
 	void createLogicalDevice();
 	void createSwapChain();
-	void createImageView();
+	void createImageViews();
 	void createRenderPass();
 	void createGraphicsPipeline();
 	void createFrameBuffers();
 	void createCommandPool();
 	void createCommandBuffers();
 	void createSyncObjects();
+
+	void recreateSwapChain();
 
 	void drawFrame();
 
@@ -81,8 +85,12 @@ class VulkanApp {
 
 	void setupDebugMessenger(VkDevice device);
 
+	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
+
 	void mainLoop();
+
 	void cleanup();
+	void cleanupSwapChain();
 
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
@@ -124,6 +132,11 @@ class VulkanApp {
 	std::vector<VkFence> m_inFlightFences;
 
 	int m_currentFrame{0};
+
+	bool m_framebufferResized {false}; 
+	// VK_ERROR_OUT_OF_DATE_KHR, est pas garantie pendant le resize en fonction de la plateforme 
+	// donc ajout du bool pour le gerer correctement
+
 };
 
 #endif // VULKAN_APP_H

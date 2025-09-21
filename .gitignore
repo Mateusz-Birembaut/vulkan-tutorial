@@ -1,0 +1,8 @@
+# Ignore Visual Studio Code configuration files
+.vscode/
+
+# Ignore batch files for compilation
+compile.bat
+
+# Ignore compiled code or binaries
+vkTuto

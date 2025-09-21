@@ -7,10 +7,13 @@ vkTuto: *.cpp *.h
 	g++ $(CFLAGS) -o vkTuto *.cpp $(LDFLAGS)
 
 
-.PHONY: test clean
+.PHONY: test test-fps clean
 
 test: vkTuto
 	./vkTuto
+
+test-fps: vkTuto
+	MANGOHUD=1 ./vkTuto
 
 clean:
 	rm -f vkTuto

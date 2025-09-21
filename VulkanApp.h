@@ -14,6 +14,8 @@
 constexpr uint32_t g_screen_width{800};
 constexpr uint32_t g_screen_height{600};
 
+constexpr int g_max_frames_in_flight{2};
+
 const std::vector<const char*> validationLayers{
     "VK_LAYER_KHRONOS_validation",
 };
@@ -35,7 +37,6 @@ struct QueueFamilyIndices {
 	bool isComplete() {
 		return graphicsFamily.has_value() && presentFamily.has_value();
 	}
-
 };
 
 struct SwapChainSupportDetails {
@@ -67,7 +68,7 @@ class VulkanApp {
 	void createGraphicsPipeline();
 	void createFrameBuffers();
 	void createCommandPool();
-	void createCommandBuffer();
+	void createCommandBuffers();
 	void createSyncObjects();
 
 	void drawFrame();
@@ -88,9 +89,9 @@ class VulkanApp {
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-	
+
 	VkShaderModule createShaderModule(const std::vector<char>& code);
-	
+
 	GLFWwindow* m_window;
 
 	VkInstance m_instance;
@@ -114,14 +115,15 @@ class VulkanApp {
 
 	std::vector<VkImageView> m_swapChainImageViews;
 	std::vector<VkFramebuffer> m_swapChainFrameBuffers;
-	VkCommandBuffer m_commandBuffer;
 
-	VkSemaphore m_imageAvailableSemaphore;
-	VkSemaphore m_renderFinishedSemaphore;
+	std::vector<VkCommandBuffer> m_commandBuffers;
 
-	VkFence m_inFlightFence;
+	std::vector<VkSemaphore> m_imageAvailableSemaphores;
+	std::vector<VkSemaphore> m_renderFinishedSemaphores;
 
+	std::vector<VkFence> m_inFlightFences;
 
+	int m_currentFrame{0};
 };
 
 #endif // VULKAN_APP_H

@@ -23,9 +23,9 @@ graph LR
   %% Swapchain and images
   Surf --> Swap[VkSwapchainKHR]
   Dev --> Swap
-  Swap --> Img[VkImage[]]
-  Img --> Views[VkImageView[]]
-  Views --> Fbs[VkFramebuffer[]]
+  Swap --> Img[VkImage array]
+  Img --> Views[VkImageView array]
+  Views --> Fbs[VkFramebuffer array]
 
   %% Render pipeline
   Dev --> RP[VkRenderPass]

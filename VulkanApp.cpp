@@ -775,7 +775,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	renderPassInfo.renderArea.extent = m_swapChainExtent;
 	// size of render area, pour de meilleur perfs, ca doit match la render area de l'attachment
 
-	VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+	VkClearValue clearColor = {{{0.0f, 1.0f, 0.0f, 1.0f}}};
 	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.pClearValues = &clearColor;
 	// valeurs utilisé par VK_ATTACHMENT_LOAD_OP_CLEAR

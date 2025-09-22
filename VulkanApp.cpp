@@ -1,6 +1,9 @@
 #include "VulkanApp.h"
 #include "FileReader.h"
+#include "Vertex.h"
 
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 #include <algorithm>
 #include <cstring>
 #include <fstream>
@@ -67,6 +70,7 @@ void VulkanApp::initVulkan() {
 	createGraphicsPipeline();
 	createFrameBuffers();
 	createCommandPool();
+	createVertexBuffer();
 	createCommandBuffers();
 	createSyncObjects();
 }
@@ -442,13 +446,17 @@ void VulkanApp::createGraphicsPipeline() {
 
 	VkPipelineShaderStageCreateInfo shaderStages[]{vertShaderStageInfo, fragShaderStageInfo};
 
+	auto bindingDescription = Vertex::getBindingDescription();
+	auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.pVertexBindingDescriptions = nullptr; // pointeurs sur le array of structs
-	// equivalent en opengl : taille des données
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	// equivalent en opengl : bind
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+	;
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 	// equivalent opengl : comment sont organisé les données
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -743,6 +751,71 @@ void VulkanApp::createCommandPool() {
 	}
 }
 
+void VulkanApp::createVertexBuffer() {
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = sizeof(vertices[0]) * vertices.size();
+	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	// se sera seulement utilisé par la graphics queue on utilise alors exlusive
+
+	if (vkCreateBuffer(m_device, &bufferInfo, nullptr, &m_vertexBuffer) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create vertex buffer");
+	}
+
+	VkMemoryRequirements memRequirements;
+	vkGetBufferMemoryRequirements(m_device, m_vertexBuffer, &memRequirements);
+
+	VkMemoryAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = findMemoryType(
+	    memRequirements.memoryTypeBits,
+	    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );
+	// VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, permet de ne pas flush la mémoire, on s'assure que la mémoire mappé
+	// match le contenu de la mémoire alloué, peut etre moins performant que flush mais pas important pour l'instant
+
+	if (vkAllocateMemory(m_device, &allocInfo, nullptr, &m_vertexBufferMemory) != VK_SUCCESS) {
+		throw std::runtime_error("failed to allocate vertex buffer memory");
+	}
+
+	vkBindBufferMemory(m_device, m_vertexBuffer, m_vertexBufferMemory, 0);
+	// dernier param : offset, ici 0, si c'est différent de 0,
+	// l'offset doit etre divisible par memRequirements.alignment
+
+	void* data;
+	vkMapMemory(m_device, m_vertexBufferMemory, 0, VK_WHOLE_SIZE, 0, &data);
+	// on accede a la mémoire, VK_WHOLE_SIZE toute la mémoire
+	//  sinon on peut mettre aussi bufferInfo.size
+
+	memcpy(data, vertices.data(), static_cast<size_t>(bufferInfo.size));
+	// on copie la mémoire
+
+	vkUnmapMemory(m_device, m_vertexBufferMemory);
+}
+
+// on a besoin de combiner les besoin de notre app et les besoins de notre buffer
+// on recupère le type de mémoire gpu qui nous permet ça
+uint32_t VulkanApp::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProperties);
+
+	// memProperties.memoryHeaps, ressources mémoire comme Vram, swap space in RAM (quand la vram est épuisé) ect.
+	// memProperties.memoryTypes, types de mémoire dans ces heaps
+	// on s'occupera pas de la heap, mais ca a un impact sur les perfs, dans d'autres applis faut vérifier
+
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+		if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties))
+			// si i = 0 => 0001, i = 0 => 0010
+			// permet de vérifier si le type est compatible mais pas suffisant, ex : si typeFilter 1010, a i =1 ca se stopperai mais pas forcement bon
+			// on a rajoute le check sur les propriétés pour voir si c'est vraiment compatible
+			return i;
+	}
+
+	throw std::runtime_error("failed to find suitable memory type!");
+}
+
 void VulkanApp::createCommandBuffers() {
 
 	m_commandBuffers.resize(g_max_frames_in_flight);
@@ -800,6 +873,11 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 	// VK_PIPELINE_BIND_POINT_GRAPHICS, c'est une pipeline de rendu
 
+	VkBuffer vertexBuffers[]{m_vertexBuffer};
+	VkDeviceSize offsets[]{0};
+
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
 	// comme on a défini le viewport et scissor dynamiquement on doit les spécifier ici
 
 	VkViewport viewport{}; // la région de l'output buffer dans laquelle on écrit ex:
@@ -819,7 +897,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	// la command pour draw 1 triangle de 3 index :
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+	vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 	// avant dernier : offset dans le vertexbuffer, défini le vertex index le plus petit
 	// dernier : ofsset pour les instanced rendering, def le + petit
 
@@ -967,8 +1045,8 @@ void VulkanApp::recreateSwapChain() {
 		glfwGetFramebufferSize(m_window, &width, &height);
 		glfwWaitEvents();
 	}
-	//quand on est minimiser width et height sont a 0, tant que c'est le cas, 
-	// on fait rien, boucle infini, tant qu'on a pas re ouvert
+	// quand on est minimiser width et height sont a 0, tant que c'est le cas,
+	//  on fait rien, boucle infini, tant qu'on a pas re ouvert
 
 	vkDeviceWaitIdle(m_device);
 
@@ -983,8 +1061,10 @@ void VulkanApp::recreateSwapChain() {
 
 void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 	vkDeviceWaitIdle(m_device); // pour attendre que toutes les opération vk soient terminées
-
 	cleanupSwapChain();
+
+	vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
+	vkFreeMemory(m_device, m_vertexBufferMemory, nullptr);
 
 	for (size_t i = 0; i < g_max_frames_in_flight; i++) {
 		vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);

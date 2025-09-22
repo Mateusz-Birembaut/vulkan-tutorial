@@ -70,8 +70,11 @@ class VulkanApp {
 	void createGraphicsPipeline();
 	void createFrameBuffers();
 	void createCommandPool();
+	void createVertexBuffer();
 	void createCommandBuffers();
 	void createSyncObjects();
+
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags propreties);
 
 	void recreateSwapChain();
 
@@ -120,6 +123,9 @@ class VulkanApp {
 	VkPipeline m_graphicsPipeline;
 
 	VkCommandPool m_commandPool;
+
+	VkBuffer m_vertexBuffer;
+	VkDeviceMemory m_vertexBufferMemory;
 
 	std::vector<VkImageView> m_swapChainImageViews;
 	std::vector<VkFramebuffer> m_swapChainFrameBuffers;

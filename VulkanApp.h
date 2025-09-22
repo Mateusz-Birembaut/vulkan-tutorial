@@ -33,9 +33,12 @@ constexpr bool enableValidationLayers = false;
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily; // on peut voir si on a une graphics queue, pour certaines queue on est pas obligé de l'avoir forcément
 	std::optional<uint32_t> presentFamily;	// see if we can present images to the surface
+	std::optional<uint32_t> transferFamily; 
+
+
 
 	bool isComplete() {
-		return graphicsFamily.has_value() && presentFamily.has_value();
+		return graphicsFamily.has_value() && presentFamily.has_value() && transferFamily.has_value();
 	}
 };
 
@@ -69,10 +72,17 @@ class VulkanApp {
 	void createRenderPass();
 	void createGraphicsPipeline();
 	void createFrameBuffers();
-	void createCommandPool();
+	void createCommandPools();
 	void createVertexBuffer();
-	void createCommandBuffers();
+	void createGraphicsCommandBuffers();
+	void createTransferCommandBuffer();
 	void createSyncObjects();
+
+	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
+	void createCommandBuffers();
+	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags propreties);
 
@@ -80,7 +90,7 @@ class VulkanApp {
 
 	void drawFrame();
 
-	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+	void recordGraphicsCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
 	bool checkValidationLayerSupport();
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
@@ -112,6 +122,7 @@ class VulkanApp {
 
 	VkQueue m_graphicsQueue;
 	VkQueue m_presentQueue;
+	VkQueue m_transferQueue;
 
 	VkSwapchainKHR m_swapChain;
 	std::vector<VkImage> m_swapChainImages;
@@ -123,6 +134,7 @@ class VulkanApp {
 	VkPipeline m_graphicsPipeline;
 
 	VkCommandPool m_commandPool;
+	VkCommandPool m_commandPoolTransfer;
 
 	VkBuffer m_vertexBuffer;
 	VkDeviceMemory m_vertexBufferMemory;

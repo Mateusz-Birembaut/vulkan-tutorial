@@ -69,7 +69,7 @@ void VulkanApp::initVulkan() {
 	createRenderPass();
 	createGraphicsPipeline();
 	createFrameBuffers();
-	createCommandPool();
+	createCommandPools();
 	createVertexBuffer();
 	createCommandBuffers();
 	createSyncObjects();
@@ -87,7 +87,7 @@ void VulkanApp::createLogicalDevice() { // les queues sont créées en même tem
 	QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice);
 
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::set<uint32_t> uniqueQueueFamilies{indices.graphicsFamily.value(), indices.presentFamily.value()};
+	std::set<uint32_t> uniqueQueueFamilies{indices.graphicsFamily.value(), indices.presentFamily.value(), indices.transferFamily.value()};
 
 	float queuePriority = 1.0f; // influence l'execution du command buffer de 0.f à 1.f
 	for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -127,6 +127,7 @@ void VulkanApp::createLogicalDevice() { // les queues sont créées en même tem
 
 	vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
 	vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_presentQueue);
+	vkGetDeviceQueue(m_device, indices.transferFamily.value(), 0, &m_transferQueue);
 }
 
 void VulkanApp::pickPhysicalDevice() {
@@ -236,6 +237,10 @@ QueueFamilyIndices VulkanApp::findQueueFamilies(VkPhysicalDevice device) {
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			indices.graphicsFamily = i;
 		}
+		if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT && !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+			indices.transferFamily = i;
+		}
+
 		VkBool32 presentSupport{false};
 		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &presentSupport); // les deux indices peuvent etre les meme, c'est mieux si c'est les meme, les perfs son meilleurs
 
@@ -350,12 +355,15 @@ void VulkanApp::createSwapChain() {
 	// pour transférer l'image rendue vers une image du swap chain
 
 	QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice);
-	uint32_t queueFamilyIndices[]{indices.graphicsFamily.value(), indices.presentFamily.value()};
+	std::set<uint32_t> uniqueIndices{indices.graphicsFamily.value(), indices.presentFamily.value(), indices.transferFamily.value()};
+
+	std::vector<uint32_t> queueFamilyIndices(uniqueIndices.begin(), uniqueIndices.end());
+	// queue present et transfer peuvent etre les même
 
 	if (indices.graphicsFamily != indices.presentFamily) { // si les deux queues sont séparé
 		swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-		swapChainCreateInfo.queueFamilyIndexCount = 2;
-		swapChainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
+		swapChainCreateInfo.queueFamilyIndexCount = queueFamilyIndices.size();
+		swapChainCreateInfo.pQueueFamilyIndices = queueFamilyIndices.data();
 	} else {
 		swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		swapChainCreateInfo.queueFamilyIndexCount = 0;	   // optional
@@ -730,7 +738,7 @@ void VulkanApp::createFrameBuffers() {
 	// std::cout << "Frame buffers created" << '\n';
 }
 
-void VulkanApp::createCommandPool() {
+void VulkanApp::createCommandPools() {
 	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(m_physicalDevice);
 
 	VkCommandPoolCreateInfo poolInfo{};
@@ -749,50 +757,143 @@ void VulkanApp::createCommandPool() {
 	} else {
 		std::cout << "Command pool created" << '\n';
 	}
+
+	VkCommandPoolCreateInfo poolTransferInfo{};
+	poolTransferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolTransferInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+	poolTransferInfo.queueFamilyIndex = queueFamilyIndices.transferFamily.value();
+
+	if (vkCreateCommandPool(m_device, &poolTransferInfo, nullptr, &m_commandPoolTransfer) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create command pool!");
+	} else {
+		std::cout << "Command pool created" << '\n';
+	}
 }
 
-void VulkanApp::createVertexBuffer() {
+void VulkanApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
+
 	VkBufferCreateInfo bufferInfo{};
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	// se sera seulement utilisé par la graphics queue on utilise alors exlusive
+	bufferInfo.size = size;
+	bufferInfo.usage = usage;
+	bufferInfo.sharingMode = sharingMode;
 
-	if (vkCreateBuffer(m_device, &bufferInfo, nullptr, &m_vertexBuffer) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create vertex buffer");
+	auto indices = findQueueFamilies(m_physicalDevice);
+	if (sharingMode == VK_SHARING_MODE_CONCURRENT) {
+		std::set<uint32_t> uniqueIndices = {
+			indices.graphicsFamily.value(),
+			indices.transferFamily.value()
+		};
+		std::vector<uint32_t> queueFamilyIndices(uniqueIndices.begin(), uniqueIndices.end());
+		bufferInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size());
+		bufferInfo.pQueueFamilyIndices = queueFamilyIndices.data();
+	} else {
+		bufferInfo.queueFamilyIndexCount = 0;
+		bufferInfo.pQueueFamilyIndices = nullptr;
 	}
 
+	if (vkCreateBuffer(m_device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create vertex buffer");
+	}
 	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(m_device, m_vertexBuffer, &memRequirements);
+	vkGetBufferMemoryRequirements(m_device, buffer, &memRequirements);
 
 	VkMemoryAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = memRequirements.size;
 	allocInfo.memoryTypeIndex = findMemoryType(
-	    memRequirements.memoryTypeBits,
-	    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );
+	    memRequirements.memoryTypeBits, properties);
 	// VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, permet de ne pas flush la mémoire, on s'assure que la mémoire mappé
 	// match le contenu de la mémoire alloué, peut etre moins performant que flush mais pas important pour l'instant
 
-	if (vkAllocateMemory(m_device, &allocInfo, nullptr, &m_vertexBufferMemory) != VK_SUCCESS) {
+	if (vkAllocateMemory(m_device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+		// alloue la mémoire, en fonction de VK_MEMORY_PROPERTY, sur le gpu ou la ram
 		throw std::runtime_error("failed to allocate vertex buffer memory");
 	}
+	// normalement
 
-	vkBindBufferMemory(m_device, m_vertexBuffer, m_vertexBufferMemory, 0);
+	vkBindBufferMemory(m_device, buffer, bufferMemory, 0);
+	// fait le lien entre l'object buffer et l'espace mémoire attribué a bufferMemory
 	// dernier param : offset, ici 0, si c'est différent de 0,
 	// l'offset doit etre divisible par memRequirements.alignment
+};
+
+void VulkanApp::createVertexBuffer() {
+	VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+
+	createBuffer(
+	    bufferSize,
+	    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+	    VK_SHARING_MODE_EXCLUSIVE,
+	    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+	    stagingBuffer, stagingBufferMemory);
+	// buffer ou le cpu peut écrire, VK_BUFFER_USAGE_TRANSFER_SRC_BIT = on va pouvoir utiliser ce buffer comme source pendant un transfert
 
 	void* data;
-	vkMapMemory(m_device, m_vertexBufferMemory, 0, VK_WHOLE_SIZE, 0, &data);
-	// on accede a la mémoire, VK_WHOLE_SIZE toute la mémoire
-	//  sinon on peut mettre aussi bufferInfo.size
+	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
+	vkUnmapMemory(m_device, stagingBufferMemory);
 
-	memcpy(data, vertices.data(), static_cast<size_t>(bufferInfo.size));
-	// on copie la mémoire
+	createBuffer(
+	    bufferSize,
+	    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+	    VK_SHARING_MODE_EXCLUSIVE,
+	    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+	    m_vertexBuffer, m_vertexBufferMemory);
+	// buffer sur le gpu qui va recevoir les données du staging buffer et etre utilisé pour les sommets
 
-	vkUnmapMemory(m_device, m_vertexBufferMemory);
+	copyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
+
+	vkDestroyBuffer(m_device, stagingBuffer, nullptr);    // la par exemple encapsuler les buffers serait utile
+	vkFreeMemory(m_device, stagingBufferMemory, nullptr); // ca permettrai de ne pas avoir a spécifier les free / destroy
+							      // ils seraient appelé par le destructeur (RAII)
+}
+
+void VulkanApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandPool = m_commandPoolTransfer;
+	allocInfo.commandBufferCount = 1;
+
+	VkCommandBuffer commandBuffer;
+	vkAllocateCommandBuffers(m_device, &allocInfo, &commandBuffer);
+
+	VkCommandBufferBeginInfo beginInfo;
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	// commence a record
+
+	VkBufferCopy copyRegion{};
+	copyRegion.srcOffset = 0; // Optional
+	copyRegion.dstOffset = 0; // Optional
+	copyRegion.size = size;
+	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+	// commande pour effectuer le transfer
+
+	vkEndCommandBuffer(commandBuffer);
+	// stop le recording
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	vkQueueSubmit(m_transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	// envoie a la queue ce qu'on a record,
+	// on a pas a attendre, on veut lancer le transfert directement
+
+	vkQueueWaitIdle(m_transferQueue);
+	// par contre on doit bien attendre que se soit fini, soit :
+	// on utilise des fences et on pourrait lancer plusieurs transferts en meme temps et attendre qu'ils aient tous fini
+	// soit on sait que le transfert est fini avec vkQueueWaitIdle
+
+	vkFreeCommandBuffers(m_device, m_commandPoolTransfer, 1, &commandBuffer);
 }
 
 // on a besoin de combiner les besoin de notre app et les besoins de notre buffer
@@ -944,7 +1045,7 @@ void VulkanApp::drawFrame() {
 	// m_imageAvailableSemaphore signaled quand on a fini
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-		// VK_ERROR_OUT_OF_DATE_KHR, on peut plus du tout utilisé la swap chain et la surface pour rendre car elles sont devenu incompatible
+		// VK_ERROR_OUT_OF_DATE_KHR, on peut plus du tout utilisé la swap chain et la surface pour rendre car elles sont devenu incompatibles
 		// on la recréer et on skip ce draw
 		// par contre ca peut créer un deadlock, on décale le reset lock apres le check
 		recreateSwapChain();
@@ -1071,7 +1172,7 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 		vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
 		vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
 	}
-
+	vkDestroyCommandPool(m_device, m_commandPoolTransfer, nullptr);
 	vkDestroyCommandPool(m_device, m_commandPool, nullptr);
 	vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);

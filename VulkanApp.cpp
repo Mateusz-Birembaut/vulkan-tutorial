@@ -70,7 +70,9 @@ void VulkanApp::initVulkan() {
 	createGraphicsPipeline();
 	createFrameBuffers();
 	createCommandPools();
-	createVertexBuffer();
+	createMeshBuffer();
+	//createVertexBuffer();
+	//createIndexBuffer();
 	createCommandBuffers();
 	createSyncObjects();
 }
@@ -770,6 +772,8 @@ void VulkanApp::createCommandPools() {
 	}
 }
 
+
+
 void VulkanApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
 
 	VkBufferCreateInfo bufferInfo{};
@@ -801,8 +805,7 @@ void VulkanApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkShar
 	VkMemoryAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = findMemoryType(
-	    memRequirements.memoryTypeBits, properties);
+	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 	// VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, permet de ne pas flush la mémoire, on s'assure que la mémoire mappé
 	// match le contenu de la mémoire alloué, peut etre moins performant que flush mais pas important pour l'instant
 
@@ -818,9 +821,20 @@ void VulkanApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkShar
 	// l'offset doit etre divisible par memRequirements.alignment
 };
 
-void VulkanApp::createVertexBuffer() {
-	VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+void VulkanApp::createMeshBuffer(){
+	VkDeviceSize verticesSize = sizeof(vertices[0]) * vertices.size();
+	VkDeviceSize indicesSize = sizeof(indices[0]) * indices.size();
 
+	// je dois avoir la fin du buffer aligné (un miltiple de ...)
+	// comme j'ai des indices uint16, je dois avoir une size multiple de 2
+	// formule pour aligner au multiple : 
+	// aligned = ((operand + (alignment - 1)) & ~(alignment - 1))
+	uint16_t align = 2;
+	m_indicesOffset = (verticesSize + (align-1)) & ~(align-1);
+	// align 16
+
+	VkDeviceSize bufferSize = verticesSize + indicesSize;
+	
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
 
@@ -830,27 +844,30 @@ void VulkanApp::createVertexBuffer() {
 	    VK_SHARING_MODE_EXCLUSIVE,
 	    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	    stagingBuffer, stagingBufferMemory);
-	// buffer ou le cpu peut écrire, VK_BUFFER_USAGE_TRANSFER_SRC_BIT = on va pouvoir utiliser ce buffer comme source pendant un transfert
 
 	void* data;
-	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
+	vkMapMemory(m_device, stagingBufferMemory, 0, verticesSize, 0, &data);
+	memcpy(data, vertices.data(), static_cast<size_t>(verticesSize));
+	vkUnmapMemory(m_device, stagingBufferMemory);
+
+	vkMapMemory(m_device, stagingBufferMemory, m_indicesOffset, indicesSize, 0, &data);
+	memcpy(data, indices.data(), static_cast<size_t>(indicesSize));
 	vkUnmapMemory(m_device, stagingBufferMemory);
 
 	createBuffer(
 	    bufferSize,
-	    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+	    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 	    VK_SHARING_MODE_EXCLUSIVE,
 	    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-	    m_vertexBuffer, m_vertexBufferMemory);
-	// buffer sur le gpu qui va recevoir les données du staging buffer et etre utilisé pour les sommets
+	    m_meshBuffer, m_meshBufferMemory);
 
-	copyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
+	copyBuffer(stagingBuffer, m_meshBuffer, bufferSize);
 
-	vkDestroyBuffer(m_device, stagingBuffer, nullptr);    // la par exemple encapsuler les buffers serait utile
-	vkFreeMemory(m_device, stagingBufferMemory, nullptr); // ca permettrai de ne pas avoir a spécifier les free / destroy
-							      // ils seraient appelé par le destructeur (RAII)
+	vkDestroyBuffer(m_device, stagingBuffer, nullptr);   
+	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
+
 }
+
 
 void VulkanApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
 	VkCommandBufferAllocateInfo allocInfo{};
@@ -974,10 +991,13 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 	// VK_PIPELINE_BIND_POINT_GRAPHICS, c'est une pipeline de rendu
 
-	VkBuffer vertexBuffers[]{m_vertexBuffer};
+	VkBuffer vertexBuffers[]{m_meshBuffer};
 	VkDeviceSize offsets[]{0};
 
+
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+	vkCmdBindIndexBuffer(commandBuffer, m_meshBuffer, m_indicesOffset, VK_INDEX_TYPE_UINT16); 
+	//VK_INDEX_TYPE_UINT32 si on veut plus d'indices, mais dans ce cas modif vecteur d'indices aussi
 
 	// comme on a défini le viewport et scissor dynamiquement on doit les spécifier ici
 
@@ -998,9 +1018,12 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	// la command pour draw 1 triangle de 3 index :
-	vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 	// avant dernier : offset dans le vertexbuffer, défini le vertex index le plus petit
 	// dernier : ofsset pour les instanced rendering, def le + petit
+
+	//utilisation de l'index buffer mtn
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0 ,0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
 
@@ -1164,8 +1187,8 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 	vkDeviceWaitIdle(m_device); // pour attendre que toutes les opération vk soient terminées
 	cleanupSwapChain();
 
-	vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
-	vkFreeMemory(m_device, m_vertexBufferMemory, nullptr);
+	vkDestroyBuffer(m_device, m_meshBuffer, nullptr);
+	vkFreeMemory(m_device, m_meshBufferMemory, nullptr);
 
 	for (size_t i = 0; i < g_max_frames_in_flight; i++) {
 		vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);

@@ -73,7 +73,11 @@ class VulkanApp {
 	void createGraphicsPipeline();
 	void createFrameBuffers();
 	void createCommandPools();
+
 	void createVertexBuffer();
+	void createIndexBuffer();
+	void createMeshBuffer();
+
 	void createGraphicsCommandBuffers();
 	void createTransferCommandBuffer();
 	void createSyncObjects();
@@ -136,8 +140,16 @@ class VulkanApp {
 	VkCommandPool m_commandPool;
 	VkCommandPool m_commandPoolTransfer;
 
-	VkBuffer m_vertexBuffer;
+/* 	VkBuffer m_vertexBuffer;
 	VkDeviceMemory m_vertexBufferMemory;
+
+	VkBuffer m_indexBuffer;
+	VkDeviceMemory m_indexBufferMemory; */
+
+	VkBuffer m_meshBuffer; // combine vertices et indices, c'est ce qui est recommandé
+	VkDeviceMemory m_meshBufferMemory;
+	VkDeviceSize m_indicesOffset;
+
 
 	std::vector<VkImageView> m_swapChainImageViews;
 	std::vector<VkFramebuffer> m_swapChainFrameBuffers;

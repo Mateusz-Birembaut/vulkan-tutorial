@@ -2,6 +2,7 @@
 #include "FileReader.h"
 #include "Vertex.h"
 #include "Utility.h"
+#include "Uniforms.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -73,6 +74,7 @@ void VulkanApp::initVulkan() {
 	createFrameBuffers();
 	createCommandPools();
 	createMeshBuffer();
+	createUniformBuffer();
 	//createVertexBuffer();
 	//createIndexBuffer();
 	createCommandBuffers();
@@ -892,6 +894,27 @@ void VulkanApp::createMeshBuffer(){
 
 	vkDestroyBuffer(m_device, stagingBuffer, nullptr);   
 	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
+
+}
+
+void VulkanApp::createUniformBuffer(){
+	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+	m_uniformBuffers.resize(g_max_frames_in_flight);
+	m_uniformBuffersMemory.resize(g_max_frames_in_flight);
+	m_uniformBuffersMapped.resize(g_max_frames_in_flight);
+
+	for(int i {0}; i < g_max_frames_in_flight; ++i){
+
+		createBuffer(
+			bufferSize,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_SHARING_MODE_EXCLUSIVE, 
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			m_uniformBuffers[i], m_uniformBuffersMemory[i]);
+
+		vkMapMemory(m_device, m_uniformBuffersMemory[i], 0, bufferSize, 0, &m_uniformBuffersMapped[i]);
+	}
 
 }
 

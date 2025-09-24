@@ -75,8 +75,9 @@ class VulkanApp {
 	void createFrameBuffers();
 	void createCommandPools();
 
-	void createVertexBuffer();
-	void createIndexBuffer();
+	//void createVertexBuffer();
+	//void createIndexBuffer();
+	void createUniformBuffer();
 	void createMeshBuffer();
 
 	void createGraphicsCommandBuffers();
@@ -151,6 +152,12 @@ class VulkanApp {
 	VkBuffer m_meshBuffer; // combine vertices et indices, c'est ce qui est recommandé
 	VkDeviceMemory m_meshBufferMemory;
 	VkDeviceSize m_indicesOffset;
+
+
+	// faut un inform buffer par frames in flight
+	std::vector<VkBuffer> m_uniformBuffers;
+	std::vector<VkDeviceMemory> m_uniformBuffersMemory;
+	std::vector<void*> m_uniformBuffersMapped;
 
 
 	std::vector<VkImageView> m_swapChainImageViews;

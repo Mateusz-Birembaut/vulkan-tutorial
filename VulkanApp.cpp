@@ -1,14 +1,17 @@
 #include "VulkanApp.h"
 #include "FileReader.h"
-#include "Vertex.h"
-#include "Utility.h"
 #include "Uniforms.h"
+#include "Utility.h"
+#include "Vertex.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <algorithm>
+#include <chrono>
 #include <cstring>
 #include <fstream>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <limits>
 
 void VulkanApp::initWindow() {
@@ -75,8 +78,10 @@ void VulkanApp::initVulkan() {
 	createCommandPools();
 	createMeshBuffer();
 	createUniformBuffer();
-	//createVertexBuffer();
-	//createIndexBuffer();
+	createDescriptorPool();
+	createDescriptorSets();
+	// createVertexBuffer();
+	// createIndexBuffer();
 	createCommandBuffers();
 	createSyncObjects();
 }
@@ -188,8 +193,8 @@ bool VulkanApp::isDeviceSuitable(VkPhysicalDevice device) {
 
 void VulkanApp::createInstance() {
 
-	//if (!checkValidationLayerSupport() && enableValidationLayers)
-		//throw std::runtime_error("Validation layers requested are not available!");
+	if (!checkValidationLayerSupport() && enableValidationLayers)
+		throw std::runtime_error("Validation layers requested are not available!");
 
 	VkApplicationInfo appInfo{}; // techniquement optional, info sur l'app
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -213,11 +218,11 @@ void VulkanApp::createInstance() {
 	createInfo.enabledExtensionCount = glfwExtensionCount;
 	createInfo.ppEnabledExtensionNames = glfwExtensions; // on donne les noms des extension et ca va les activer
 
-	//if (enableValidationLayers) {
-		//createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-		//createInfo.ppEnabledLayerNames = validationLayers.data();
+	// if (enableValidationLayers) {
+	// createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+	// createInfo.ppEnabledLayerNames = validationLayers.data();
 	//} else {
-		createInfo.enabledLayerCount = 0;
+	createInfo.enabledLayerCount = 0;
 	//}
 
 	// VkResult result = vkCreateInstance(&createInfo, nullptr, &m_instance); // créer l'instance avec les infos fournit
@@ -432,7 +437,9 @@ void VulkanApp::createImageViews() {
 	// std::cout << "all image views created" << std::endl;
 }
 
-void VulkanApp::createDescriptorSetLayout(){
+void VulkanApp::createDescriptorSetLayout() {
+	// défini quels type de descriptor qui peut etre bound
+
 	VkDescriptorSetLayoutBinding uboLayoutBinding{};
 	uboLayoutBinding.binding = 0;
 	uboLayoutBinding.descriptorCount = 1;
@@ -441,17 +448,16 @@ void VulkanApp::createDescriptorSetLayout(){
 	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	// a quel stage on va utiliser le ubo, peut en avoir plusieurs ou VK_SHADER_STAGE_ALL_GRAPHICS pour tous
 	uboLayoutBinding.pImmutableSamplers = nullptr; // optional
-	//utilisé pour les uniforms en rapport avec de l'image sampling
+	// utilisé pour les uniforms en rapport avec de l'image sampling
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	layoutInfo.bindingCount = 1;
 	layoutInfo.pBindings = &uboLayoutBinding;
 
-	if( vkCreateDescriptorSetLayout(m_device, &layoutInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS){
+	if (vkCreateDescriptorSetLayout(m_device, &layoutInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor set layout!");
 	}
-
 }
 
 void VulkanApp::createGraphicsPipeline() {
@@ -545,7 +551,7 @@ void VulkanApp::createGraphicsPipeline() {
 	rasterizer.lineWidth = 1.0f; // si on veut plus de 1, on doit aussi activer une gpu feature "widelines"
 
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;	// on cull classiquement
-	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE; // en Vulkan, avec viewport non inversé, l'enroulement visuel CCW devient CW
+	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE; // en Vulkan, avec viewport non inversé, l'enroulement visuel CCW devient CW
 
 	rasterizer.depthBiasEnable = VK_FALSE;
 	rasterizer.depthBiasConstantFactor = 0.0f; // Optional
@@ -597,8 +603,8 @@ void VulkanApp::createGraphicsPipeline() {
 	// uniforms spécifié ici
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 1;		 
-	pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;	 
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;
 	pipelineLayoutInfo.pushConstantRangeCount = 0;	  // Optional
 	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 	// la on peut passer des variables dynamic a nos shader
@@ -798,8 +804,6 @@ void VulkanApp::createCommandPools() {
 	}
 }
 
-
-
 void VulkanApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
 
 	VkBufferCreateInfo bufferInfo{};
@@ -812,9 +816,8 @@ void VulkanApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkShar
 	if (sharingMode == VK_SHARING_MODE_CONCURRENT) {
 		// on défini les queues qui vont acceder a notre buffer
 		std::set<uint32_t> uniqueIndices = {
-			indices.graphicsFamily.value(),
-			indices.transferFamily.value()
-		};
+		    indices.graphicsFamily.value(),
+		    indices.transferFamily.value()};
 		std::vector<uint32_t> queueFamilyIndices(uniqueIndices.begin(), uniqueIndices.end());
 		bufferInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size());
 		bufferInfo.pQueueFamilyIndices = queueFamilyIndices.data();
@@ -848,20 +851,19 @@ void VulkanApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkShar
 	// l'offset doit etre divisible par memRequirements.alignment
 };
 
-
-void VulkanApp::createMeshBuffer(){
+void VulkanApp::createMeshBuffer() {
 	VkDeviceSize verticesSize = sizeof(vertices[0]) * vertices.size();
 	VkDeviceSize indicesSize = sizeof(indices[0]) * indices.size();
 
 	// je dois avoir la fin du buffer aligné (un miltiple de ...)
 	// comme j'ai des indices uint16, je dois avoir une size multiple de 2
-	// formule pour aligner au multiple : 
+	// formule pour aligner au multiple :
 	// aligned = ((operand + (alignment - 1)) & ~(alignment - 1)) voir utility.h
 	m_indicesOffset = AlignTo(verticesSize, 2);
 	// align 16
 
-	VkDeviceSize bufferSize = verticesSize + indicesSize;
-	
+	VkDeviceSize bufferSize = m_indicesOffset + indicesSize;
+
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
 
@@ -873,51 +875,46 @@ void VulkanApp::createMeshBuffer(){
 	    stagingBuffer, stagingBufferMemory);
 
 	void* data;
-	vkMapMemory(m_device, stagingBufferMemory, 0, verticesSize, 0, &data);
+	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
 	memcpy(data, vertices.data(), static_cast<size_t>(verticesSize));
-	vkUnmapMemory(m_device, stagingBufferMemory);
 
-	vkMapMemory(m_device, stagingBufferMemory, m_indicesOffset, indicesSize, 0, &data);
-	memcpy(data, indices.data(), static_cast<size_t>(indicesSize));
+	memcpy(static_cast<char*>(data)  + m_indicesOffset, indices.data(), static_cast<size_t>(indicesSize));
 	vkUnmapMemory(m_device, stagingBufferMemory);
 
 	createBuffer(
 	    bufferSize,
 	    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 	    VK_SHARING_MODE_CONCURRENT,
-		// sharing mode concurrent car va etre utilisé par la transfert queue et la graphics queue
-		// comme j'ai fais en sorte de séparer les deux si possible
+	    // sharing mode concurrent car va etre utilisé par la transfert queue et la graphics queue
+	    // comme j'ai fais en sorte de séparer les deux si possible
 	    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 	    m_meshBuffer, m_meshBufferMemory);
 
 	copyBuffer(stagingBuffer, m_meshBuffer, bufferSize);
 
-	vkDestroyBuffer(m_device, stagingBuffer, nullptr);   
+	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
 	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
-
 }
 
-void VulkanApp::createUniformBuffer(){
+void VulkanApp::createUniformBuffer() {
 	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
 	m_uniformBuffers.resize(g_max_frames_in_flight);
 	m_uniformBuffersMemory.resize(g_max_frames_in_flight);
 	m_uniformBuffersMapped.resize(g_max_frames_in_flight);
 
-	for(int i {0}; i < g_max_frames_in_flight; ++i){
+	for (int i{0}; i < g_max_frames_in_flight; ++i) {
 
 		createBuffer(
-			bufferSize,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_SHARING_MODE_EXCLUSIVE, 
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			m_uniformBuffers[i], m_uniformBuffersMemory[i]);
+		    bufferSize,
+		    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		    VK_SHARING_MODE_EXCLUSIVE,
+		    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		    m_uniformBuffers[i], m_uniformBuffersMemory[i]);
 
 		vkMapMemory(m_device, m_uniformBuffersMemory[i], 0, bufferSize, 0, &m_uniformBuffersMapped[i]);
 	}
-
 }
-
 
 void VulkanApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
 	VkCommandBufferAllocateInfo allocInfo{};
@@ -1044,10 +1041,9 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	VkBuffer vertexBuffers[]{m_meshBuffer};
 	VkDeviceSize offsets[]{0};
 
-
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, m_meshBuffer, m_indicesOffset, VK_INDEX_TYPE_UINT16); 
-	//VK_INDEX_TYPE_UINT32 si on veut plus d'indices, mais dans ce cas modif vecteur d'indices aussi
+	vkCmdBindIndexBuffer(commandBuffer, m_meshBuffer, m_indicesOffset, VK_INDEX_TYPE_UINT16);
+	// VK_INDEX_TYPE_UINT32 si on veut plus d'indices, mais dans ce cas modif vecteur d'indices aussi
 
 	// comme on a défini le viewport et scissor dynamiquement on doit les spécifier ici
 
@@ -1068,12 +1064,17 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	// la command pour draw 1 triangle de 3 index :
-	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+	// vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 	// avant dernier : offset dans le vertexbuffer, défini le vertex index le plus petit
 	// dernier : ofsset pour les instanced rendering, def le + petit
 
-	//utilisation de l'index buffer mtn
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0 ,0, 0);
+	vkCmdBindDescriptorSets(commandBuffer, 
+		VK_PIPELINE_BIND_POINT_GRAPHICS, 
+		m_pipelineLayout,
+		0, 1, &m_descriptorSets[m_currentFrame], 0, nullptr);
+
+	// utilisation de l'index buffer mtn
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
 
@@ -1133,6 +1134,8 @@ void VulkanApp::drawFrame() {
 	// on est sur d'avoir une image a draw
 	// si on reset et que recreate swap chain est appelé, alors on sera toujours
 	// sur la fence m_inFlightFences[m_currentFrame] et on sera bloqué par vkWaitForFences
+
+	updateUniformBuffer(m_currentFrame);
 
 	// record un command buffer pour draw sur l'image
 	vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
@@ -1237,8 +1240,13 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 	vkDeviceWaitIdle(m_device); // pour attendre que toutes les opération vk soient terminées
 	cleanupSwapChain();
 
-	vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, nullptr);
+	for (size_t i = 0; i < g_max_frames_in_flight; i++) {
+		vkDestroyBuffer(m_device, m_uniformBuffers[i], nullptr);
+		vkFreeMemory(m_device, m_uniformBuffersMemory[i], nullptr);
+	}
 
+	vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
+	vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, nullptr);
 	vkDestroyBuffer(m_device, m_meshBuffer, nullptr);
 	vkFreeMemory(m_device, m_meshBufferMemory, nullptr);
 
@@ -1253,8 +1261,114 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
 	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 	vkDestroyDevice(m_device, nullptr);
+	
 	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 	vkDestroyInstance(m_instance, nullptr);
 	glfwDestroyWindow(m_window);
 	glfwTerminate();
 }
+
+void VulkanApp::updateUniformBuffer(uint32_t currentImage){
+	static auto startTime {std::chrono::high_resolution_clock::now()};
+	auto currentTime {std::chrono::high_resolution_clock::now()}; 
+	float time {std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count()};
+
+	UniformBufferObject ubo{};
+	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	// rotation avec le temps qui passe sur l'éxe y
+
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	// caméra en hauter et qui regarde en 0,0,0, up de la camera en 0,0,1
+
+	ubo.proj = glm::perspective(glm::radians(45.0f), m_swapChainExtent.width / static_cast<float>(m_swapChainExtent.height), 0.1f, 10.0f);
+	// camera d'un fov de 45, avec la taille = a celle de nos images et un near plan à 0.1F et far a 10.0f
+
+	ubo.proj[1][1] *= -1; // car glm pour OpenGL et l'axe y est inversé par rapport a vulkan
+
+	memcpy(m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+	// m_uniformBuffersMapped adresse accessible ou vont être stockées les données de l'ubo 
+}
+
+
+
+void VulkanApp::createDescriptorPool(){ 
+	// les descriptor peuvent pas etre créer directement, ils doivent etre alloué depuis un pool
+	// comme les command buffer
+
+	VkDescriptorPoolSize poolSize{};
+	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSize.descriptorCount = static_cast<uint32_t>(g_max_frames_in_flight);
+
+	VkDescriptorPoolCreateInfo infoPool{};
+	infoPool.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	infoPool.poolSizeCount = 1;
+	// le nombre de descriptor qui peuvent être alloué
+	infoPool.pPoolSizes = &poolSize;
+	// nombre max de descriptor
+	infoPool.maxSets = static_cast<uint32_t>(g_max_frames_in_flight);
+
+	if(vkCreateDescriptorPool(m_device, &infoPool, nullptr, &m_descriptorPool) != VK_SUCCESS){
+		throw std::runtime_error("failed to create descriptor pool!");
+	}
+
+}
+
+void VulkanApp::createDescriptorSets(){ // les descriptors vont décrire comment acceder aux ressources depuis les shaders
+	// les sets sont des paquest de descriptors
+	std::vector<VkDescriptorSetLayout> layouts(g_max_frames_in_flight, m_descriptorSetLayout);
+	
+	VkDescriptorSetAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = m_descriptorPool;
+	allocInfo.descriptorSetCount = static_cast<uint32_t>(g_max_frames_in_flight);
+	allocInfo.pSetLayouts = layouts.data();
+
+	m_descriptorSets.resize(g_max_frames_in_flight);
+
+	if(vkAllocateDescriptorSets(m_device, &allocInfo, m_descriptorSets.data()) != VK_SUCCESS){
+		throw std::runtime_error("failed to create descriptor sets!");
+	}
+
+	for(int i {0}; i < g_max_frames_in_flight; ++i){
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = m_uniformBuffers[i];
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(UniformBufferObject);
+
+		VkWriteDescriptorSet descriptorWrite{};
+		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet = m_descriptorSets[i];
+		descriptorWrite.dstBinding = 0;
+		// binding de l'uniforme dans le shader 
+		descriptorWrite.dstArrayElement = 0; // un descriptor peut etre un array un array,
+		// on doit spécifier le premier index, ici pas un tableaun l'indice est 0
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrite.descriptorCount = 1;
+		// combien d'array on veut update
+
+		// les 3 derniers param, on remplis en fonction du quel on veut
+		descriptorWrite.pBufferInfo = &bufferInfo; // refers to un data buffer 
+		descriptorWrite.pImageInfo = nullptr; // opt, image data
+		descriptorWrite.pTexelBufferView = nullptr; // opt, buffer views
+
+		vkUpdateDescriptorSets(m_device, 1, &descriptorWrite, 0, nullptr);
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -33,9 +33,7 @@ constexpr bool enableValidationLayers = false;
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily; // on peut voir si on a une graphics queue, pour certaines queue on est pas obligé de l'avoir forcément
 	std::optional<uint32_t> presentFamily;	// see if we can present images to the surface
-	std::optional<uint32_t> transferFamily; 
-
-
+	std::optional<uint32_t> transferFamily;
 
 	bool isComplete() {
 		return graphicsFamily.has_value() && presentFamily.has_value() && transferFamily.has_value();
@@ -57,7 +55,9 @@ class VulkanApp {
 		cleanup();
 	}
 
-	void setResized(bool b) { m_framebufferResized = b;}
+	void setResized(bool b) {
+		m_framebufferResized = b;
+	}
 
       private:
 	void initWindow();
@@ -75,9 +75,11 @@ class VulkanApp {
 	void createFrameBuffers();
 	void createCommandPools();
 
-	//void createVertexBuffer();
-	//void createIndexBuffer();
+	// void createVertexBuffer();
+	// void createIndexBuffer();
 	void createUniformBuffer();
+	void createDescriptorPool();
+	void createDescriptorSets();
 	void createMeshBuffer();
 
 	void createGraphicsCommandBuffers();
@@ -94,6 +96,7 @@ class VulkanApp {
 
 	void recreateSwapChain();
 
+	void updateUniformBuffer(uint32_t currentFrame);
 	void drawFrame();
 
 	void recordGraphicsCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
@@ -110,6 +113,7 @@ class VulkanApp {
 
 	void cleanup();
 	void cleanupSwapChain();
+
 
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
@@ -143,22 +147,23 @@ class VulkanApp {
 	VkCommandPool m_commandPool;
 	VkCommandPool m_commandPoolTransfer;
 
-/* 	VkBuffer m_vertexBuffer;
-	VkDeviceMemory m_vertexBufferMemory;
+	/* 	VkBuffer m_vertexBuffer;
+		VkDeviceMemory m_vertexBufferMemory;
 
-	VkBuffer m_indexBuffer;
-	VkDeviceMemory m_indexBufferMemory; */
+		VkBuffer m_indexBuffer;
+		VkDeviceMemory m_indexBufferMemory; */
 
 	VkBuffer m_meshBuffer; // combine vertices et indices, c'est ce qui est recommandé
 	VkDeviceMemory m_meshBufferMemory;
 	VkDeviceSize m_indicesOffset;
-
 
 	// faut un inform buffer par frames in flight
 	std::vector<VkBuffer> m_uniformBuffers;
 	std::vector<VkDeviceMemory> m_uniformBuffersMemory;
 	std::vector<void*> m_uniformBuffersMapped;
 
+	VkDescriptorPool m_descriptorPool;
+	std::vector<VkDescriptorSet> m_descriptorSets;
 
 	std::vector<VkImageView> m_swapChainImageViews;
 	std::vector<VkFramebuffer> m_swapChainFrameBuffers;
@@ -172,10 +177,9 @@ class VulkanApp {
 
 	int m_currentFrame{0};
 
-	bool m_framebufferResized {false}; 
-	// VK_ERROR_OUT_OF_DATE_KHR, est pas garantie pendant le resize en fonction de la plateforme 
+	bool m_framebufferResized{false};
+	// VK_ERROR_OUT_OF_DATE_KHR, est pas garantie pendant le resize en fonction de la plateforme
 	// donc ajout du bool pour le gerer correctement
-
 };
 
 #endif // VULKAN_APP_H

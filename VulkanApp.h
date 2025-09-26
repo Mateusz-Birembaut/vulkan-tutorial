@@ -74,7 +74,7 @@ class VulkanApp {
 	void createGraphicsPipeline();
 	void createFrameBuffers();
 	void createCommandPools();
-
+	void createTextureImage();
 	// void createVertexBuffer();
 	// void createIndexBuffer();
 	void createUniformBuffer();
@@ -88,6 +88,7 @@ class VulkanApp {
 
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+	void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
 	void createCommandBuffers();
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
@@ -123,6 +124,10 @@ class VulkanApp {
 
 	VkShaderModule createShaderModule(const std::vector<char>& code);
 
+	VkCommandBuffer beginSingleTimeCommands();
+
+	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+
 	GLFWwindow* m_window;
 
 	VkInstance m_instance;
@@ -156,6 +161,9 @@ class VulkanApp {
 	VkBuffer m_meshBuffer; // combine vertices et indices, c'est ce qui est recommandé
 	VkDeviceMemory m_meshBufferMemory;
 	VkDeviceSize m_indicesOffset;
+
+	VkImage m_textureImage;
+	VkDeviceMemory m_textureImageMemory;
 
 	// faut un inform buffer par frames in flight
 	std::vector<VkBuffer> m_uniformBuffers;

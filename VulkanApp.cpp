@@ -1,10 +1,14 @@
+
+#define GLFW_INCLUDE_VULKAN
+#define STB_IMAGE_IMPLEMENTATION
+
 #include "VulkanApp.h"
 #include "FileReader.h"
 #include "Uniforms.h"
 #include "Utility.h"
 #include "Vertex.h"
+#include "stb_image.h"
 
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <chrono>
@@ -76,6 +80,7 @@ void VulkanApp::initVulkan() {
 	createGraphicsPipeline();
 	createFrameBuffers();
 	createCommandPools();
+	createTextureImage();
 	createMeshBuffer();
 	createUniformBuffer();
 	createDescriptorPool();
@@ -550,7 +555,7 @@ void VulkanApp::createGraphicsPipeline() {
 
 	rasterizer.lineWidth = 1.0f; // si on veut plus de 1, on doit aussi activer une gpu feature "widelines"
 
-	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;	// on cull classiquement
+	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;		// on cull classiquement
 	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE; // en Vulkan, avec viewport non inversé, l'enroulement visuel CCW devient CW
 
 	rasterizer.depthBiasEnable = VK_FALSE;
@@ -878,7 +883,7 @@ void VulkanApp::createMeshBuffer() {
 	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
 	memcpy(data, vertices.data(), static_cast<size_t>(verticesSize));
 
-	memcpy(static_cast<char*>(data)  + m_indicesOffset, indices.data(), static_cast<size_t>(indicesSize));
+	memcpy(static_cast<char*>(data) + m_indicesOffset, indices.data(), static_cast<size_t>(indicesSize));
 	vkUnmapMemory(m_device, stagingBufferMemory);
 
 	createBuffer(
@@ -1068,10 +1073,10 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	// avant dernier : offset dans le vertexbuffer, défini le vertex index le plus petit
 	// dernier : ofsset pour les instanced rendering, def le + petit
 
-	vkCmdBindDescriptorSets(commandBuffer, 
-		VK_PIPELINE_BIND_POINT_GRAPHICS, 
-		m_pipelineLayout,
-		0, 1, &m_descriptorSets[m_currentFrame], 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer,
+				VK_PIPELINE_BIND_POINT_GRAPHICS,
+				m_pipelineLayout,
+				0, 1, &m_descriptorSets[m_currentFrame], 0, nullptr);
 
 	// utilisation de l'index buffer mtn
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
@@ -1261,17 +1266,17 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
 	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 	vkDestroyDevice(m_device, nullptr);
-	
+
 	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 	vkDestroyInstance(m_instance, nullptr);
 	glfwDestroyWindow(m_window);
 	glfwTerminate();
 }
 
-void VulkanApp::updateUniformBuffer(uint32_t currentImage){
-	static auto startTime {std::chrono::high_resolution_clock::now()};
-	auto currentTime {std::chrono::high_resolution_clock::now()}; 
-	float time {std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count()};
+void VulkanApp::updateUniformBuffer(uint32_t currentImage) {
+	static auto startTime{std::chrono::high_resolution_clock::now()};
+	auto currentTime{std::chrono::high_resolution_clock::now()};
+	float time{std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count()};
 
 	UniformBufferObject ubo{};
 	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -1286,12 +1291,10 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage){
 	ubo.proj[1][1] *= -1; // car glm pour OpenGL et l'axe y est inversé par rapport a vulkan
 
 	memcpy(m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
-	// m_uniformBuffersMapped adresse accessible ou vont être stockées les données de l'ubo 
+	// m_uniformBuffersMapped adresse accessible ou vont être stockées les données de l'ubo
 }
 
-
-
-void VulkanApp::createDescriptorPool(){ 
+void VulkanApp::createDescriptorPool() {
 	// les descriptor peuvent pas etre créer directement, ils doivent etre alloué depuis un pool
 	// comme les command buffer
 
@@ -1307,16 +1310,15 @@ void VulkanApp::createDescriptorPool(){
 	// nombre max de descriptor
 	infoPool.maxSets = static_cast<uint32_t>(g_max_frames_in_flight);
 
-	if(vkCreateDescriptorPool(m_device, &infoPool, nullptr, &m_descriptorPool) != VK_SUCCESS){
+	if (vkCreateDescriptorPool(m_device, &infoPool, nullptr, &m_descriptorPool) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor pool!");
 	}
-
 }
 
-void VulkanApp::createDescriptorSets(){ // les descriptors vont décrire comment acceder aux ressources depuis les shaders
+void VulkanApp::createDescriptorSets() { // les descriptors vont décrire comment acceder aux ressources depuis les shaders
 	// les sets sont des paquest de descriptors
 	std::vector<VkDescriptorSetLayout> layouts(g_max_frames_in_flight, m_descriptorSetLayout);
-	
+
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocInfo.descriptorPool = m_descriptorPool;
@@ -1325,11 +1327,11 @@ void VulkanApp::createDescriptorSets(){ // les descriptors vont décrire comment
 
 	m_descriptorSets.resize(g_max_frames_in_flight);
 
-	if(vkAllocateDescriptorSets(m_device, &allocInfo, m_descriptorSets.data()) != VK_SUCCESS){
+	if (vkAllocateDescriptorSets(m_device, &allocInfo, m_descriptorSets.data()) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor sets!");
 	}
 
-	for(int i {0}; i < g_max_frames_in_flight; ++i){
+	for (int i{0}; i < g_max_frames_in_flight; ++i) {
 		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = m_uniformBuffers[i];
 		bufferInfo.offset = 0;
@@ -1339,7 +1341,7 @@ void VulkanApp::createDescriptorSets(){ // les descriptors vont décrire comment
 		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrite.dstSet = m_descriptorSets[i];
 		descriptorWrite.dstBinding = 0;
-		// binding de l'uniforme dans le shader 
+		// binding de l'uniforme dans le shader
 		descriptorWrite.dstArrayElement = 0; // un descriptor peut etre un array un array,
 		// on doit spécifier le premier index, ici pas un tableaun l'indice est 0
 		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1347,28 +1349,99 @@ void VulkanApp::createDescriptorSets(){ // les descriptors vont décrire comment
 		// combien d'array on veut update
 
 		// les 3 derniers param, on remplis en fonction du quel on veut
-		descriptorWrite.pBufferInfo = &bufferInfo; // refers to un data buffer 
-		descriptorWrite.pImageInfo = nullptr; // opt, image data
+		descriptorWrite.pBufferInfo = &bufferInfo;  // refers to un data buffer
+		descriptorWrite.pImageInfo = nullptr;	    // opt, image data
 		descriptorWrite.pTexelBufferView = nullptr; // opt, buffer views
 
 		vkUpdateDescriptorSets(m_device, 1, &descriptorWrite, 0, nullptr);
 	}
+}
+
+void VulkanApp::createTextureImage() {
+	int texWidth;
+	int texHeight;
+	int texChannels;
+
+	stbi_uc* pixels = stbi_load("Textures/paper.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+	VkDeviceSize imgSize = texWidth * texHeight * texChannels;
+	if (!pixels) {
+		throw std::runtime_error("failed to load image!");
+	}
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+
+	createBuffer(
+	    imgSize,
+	    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+	    VK_SHARING_MODE_EXCLUSIVE,
+	    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+	    stagingBuffer, stagingBufferMemory);
+
+	void* data;
+	vkMapMemory(m_device, stagingBufferMemory, 0, imgSize, 0, &data);
+	memcpy(data, pixels, static_cast<size_t>(imgSize));
+	vkUnmapMemory(m_device, stagingBufferMemory);
+
+	stbi_image_free(pixels);
+
+	createImage(texWidth, texHeight, 
+		VK_FORMAT_R8G8B8A8_SRGB, // 4 int8 pour chaque pixels
+		VK_IMAGE_TILING_OPTIMAL, // ici pour avoir un accès le plus efficace possible
+		// tiling linéaire row major order
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, // on veut pouvoir transferer des données, et l'utiliser comme sampler 
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, // stocker de manière a avoir un accès rapide
+		m_textureImage, m_textureImageMemory);
 
 }
 
+void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format,
+			    VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
+			    VkImage& image, VkDeviceMemory& imageMemory) {
+
+	VkImageCreateInfo imageInfo{};
+	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageInfo.extent.depth = 1;
+	imageInfo.extent.height = width;
+	imageInfo.extent.width = height;
+	imageInfo.mipLevels = 1;
+	imageInfo.arrayLayers = 1;
+	imageInfo.format = format;
+	imageInfo.tiling = tiling; 
+	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageInfo.usage = usage;
+	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT; // multisampling
+	imageInfo.flags = 0;			   // Optional, voir pour 3D voxel en grande partie vide ex => nuages
+
+	if (vkCreateImage(m_device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create image!");
+	}
+
+	VkMemoryRequirements memRequirements;
+	vkGetImageMemoryRequirements(m_device, image, &memRequirements);
+
+	VkMemoryAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+	if (vkAllocateMemory(m_device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+		throw std::runtime_error("failed to allocate image memory!");
+	}
+
+	vkBindImageMemory(m_device, image, imageMemory, 0);
+
+}
+
+VkCommandBuffer VulkanApp::beginSingleTimeCommands(){
+
+}
+
+void VulkanApp::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+}

@@ -70,6 +70,7 @@ bool VulkanApp::checkValidationLayerSupport() {
 
 void VulkanApp::initVulkan() {
 	createInstance();
+	setupDebugMessenger();
 	createSurface();
 	pickPhysicalDevice();
 	createLogicalDevice();
@@ -80,7 +81,7 @@ void VulkanApp::initVulkan() {
 	createGraphicsPipeline();
 	createFrameBuffers();
 	createCommandPools();
-	createTextureImage();
+	//createTextureImage();
 	createMeshBuffer();
 	createUniformBuffer();
 	createDescriptorPool();
@@ -203,7 +204,7 @@ void VulkanApp::createInstance() {
 
 	VkApplicationInfo appInfo{}; // techniquement optional, info sur l'app
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	appInfo.pApplicationName = "Vulkan Triangle";
+	appInfo.pApplicationName = "Vulkan App";
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName = "no engine";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -220,15 +221,23 @@ void VulkanApp::createInstance() {
 	const char** glfwExtensions;
 	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount); // VK_KHR_surface enabled ici et d'autres extensions
 
-	createInfo.enabledExtensionCount = glfwExtensionCount;
-	createInfo.ppEnabledExtensionNames = glfwExtensions; // on donne les noms des extension et ca va les activer
+	auto extensions = getRequiredExtensions();
 
-	// if (enableValidationLayers) {
-	// createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-	// createInfo.ppEnabledLayerNames = validationLayers.data();
-	//} else {
-	createInfo.enabledLayerCount = 0;
-	//}
+	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+	createInfo.ppEnabledExtensionNames = extensions.data(); // on donne les noms des extension et ca va les activer
+
+	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+	if (enableValidationLayers) {
+		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+		createInfo.ppEnabledLayerNames = validationLayers.data();
+
+		populateDebugMessengerCreateInfo(debugCreateInfo);
+		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+	} else {
+		createInfo.enabledLayerCount = 0;
+
+		createInfo.pNext = nullptr;
+	}
 
 	// VkResult result = vkCreateInstance(&createInfo, nullptr, &m_instance); // créer l'instance avec les infos fournit
 	//  souvent les fonction on une struct pour la création, un pointeur syr un allocator callback (pas utilisé dans le tuto), un pointeur pour stocker l'object créer
@@ -371,6 +380,7 @@ void VulkanApp::createSwapChain() {
 	// pour transférer l'image rendue vers une image du swap chain
 
 	QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice);
+	std::cout << indices.graphicsFamily.value() <<  indices.presentFamily.value() << indices.transferFamily.value() << '\n';
 	std::set<uint32_t> uniqueIndices{indices.graphicsFamily.value(), indices.presentFamily.value(), indices.transferFamily.value()};
 
 	std::vector<uint32_t> queueFamilyIndices(uniqueIndices.begin(), uniqueIndices.end());
@@ -818,12 +828,14 @@ void VulkanApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkShar
 	bufferInfo.sharingMode = sharingMode;
 
 	auto indices = findQueueFamilies(m_physicalDevice);
+	std::set<uint32_t> uniqueIndices = {
+	    indices.graphicsFamily.value(),
+	    indices.transferFamily.value(),
+	};
+	std::vector<uint32_t> queueFamilyIndices(uniqueIndices.begin(), uniqueIndices.end());
+
 	if (sharingMode == VK_SHARING_MODE_CONCURRENT) {
 		// on défini les queues qui vont acceder a notre buffer
-		std::set<uint32_t> uniqueIndices = {
-		    indices.graphicsFamily.value(),
-		    indices.transferFamily.value()};
-		std::vector<uint32_t> queueFamilyIndices(uniqueIndices.begin(), uniqueIndices.end());
 		bufferInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size());
 		bufferInfo.pQueueFamilyIndices = queueFamilyIndices.data();
 	} else {
@@ -875,9 +887,10 @@ void VulkanApp::createMeshBuffer() {
 	createBuffer(
 	    bufferSize,
 	    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-	    VK_SHARING_MODE_EXCLUSIVE,
+	    VK_SHARING_MODE_CONCURRENT,
 	    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	    stagingBuffer, stagingBufferMemory);
+	setObjectName(stagingBuffer, "MeshStagingBuffer");
 
 	void* data;
 	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
@@ -894,6 +907,8 @@ void VulkanApp::createMeshBuffer() {
 	    // comme j'ai fais en sorte de séparer les deux si possible
 	    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 	    m_meshBuffer, m_meshBufferMemory);
+
+	setObjectName(m_meshBuffer, "MeshsssssBuffer");
 
 	copyBuffer(stagingBuffer, m_meshBuffer, bufferSize);
 
@@ -916,6 +931,8 @@ void VulkanApp::createUniformBuffer() {
 		    VK_SHARING_MODE_EXCLUSIVE,
 		    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		    m_uniformBuffers[i], m_uniformBuffersMemory[i]);
+
+		setObjectName(m_uniformBuffers[i], "UniformBuffer");
 
 		vkMapMemory(m_device, m_uniformBuffersMemory[i], 0, bufferSize, 0, &m_uniformBuffersMapped[i]);
 	}
@@ -1243,6 +1260,11 @@ void VulkanApp::recreateSwapChain() {
 
 void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 	vkDeviceWaitIdle(m_device); // pour attendre que toutes les opération vk soient terminées
+
+	if (enableValidationLayers) {
+		DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
+	}
+
 	cleanupSwapChain();
 
 	for (size_t i = 0; i < g_max_frames_in_flight; i++) {
@@ -1255,6 +1277,9 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 	vkDestroyBuffer(m_device, m_meshBuffer, nullptr);
 	vkFreeMemory(m_device, m_meshBufferMemory, nullptr);
 
+	vkDestroyImage(m_device, m_textureImage, nullptr);
+	vkFreeMemory(m_device, m_textureImageMemory, nullptr);
+
 	for (size_t i = 0; i < g_max_frames_in_flight; i++) {
 		vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
 		vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
@@ -1265,6 +1290,7 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 	vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
 	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+
 	vkDestroyDevice(m_device, nullptr);
 
 	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
@@ -1379,6 +1405,8 @@ void VulkanApp::createTextureImage() {
 	    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 	    stagingBuffer, stagingBufferMemory);
 
+	setObjectName(stagingBuffer, "ImageStagingBuffer");
+
 	void* data;
 	vkMapMemory(m_device, stagingBufferMemory, 0, imgSize, 0, &data);
 	memcpy(data, pixels, static_cast<size_t>(imgSize));
@@ -1386,14 +1414,16 @@ void VulkanApp::createTextureImage() {
 
 	stbi_image_free(pixels);
 
-	createImage(texWidth, texHeight, 
-		VK_FORMAT_R8G8B8A8_SRGB, // 4 int8 pour chaque pixels
-		VK_IMAGE_TILING_OPTIMAL, // ici pour avoir un accès le plus efficace possible
-		// tiling linéaire row major order
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, // on veut pouvoir transferer des données, et l'utiliser comme sampler 
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, // stocker de manière a avoir un accès rapide
-		m_textureImage, m_textureImageMemory);
+	createImage(texWidth, texHeight,
+		    VK_FORMAT_R8G8B8A8_SRGB, // 4 int8 pour chaque pixels
+		    VK_IMAGE_TILING_OPTIMAL, // ici pour avoir un accès le plus efficace possible
+		    // tiling linéaire row major order
+		    VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, // on veut pouvoir transferer des données, et l'utiliser comme sampler
+		    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,			  // stocker de manière a avoir un accès rapide
+		    m_textureImage, m_textureImageMemory);
 
+	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
+	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
 }
 
 void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format,
@@ -1405,11 +1435,11 @@ void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format,
 	imageInfo.imageType = VK_IMAGE_TYPE_2D;
 	imageInfo.extent.depth = 1;
 	imageInfo.extent.height = width;
-	imageInfo.extent.width = height;
+	imageInfo.extent.width = width;
 	imageInfo.mipLevels = 1;
 	imageInfo.arrayLayers = 1;
 	imageInfo.format = format;
-	imageInfo.tiling = tiling; 
+	imageInfo.tiling = tiling;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageInfo.usage = usage;
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1433,15 +1463,90 @@ void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format,
 	}
 
 	vkBindImageMemory(m_device, image, imageMemory, 0);
-
 }
 
-VkCommandBuffer VulkanApp::beginSingleTimeCommands(){
+std::vector<const char*> VulkanApp::getRequiredExtensions() {
+	uint32_t glfwExtensionCount = 0;
+	const char** glfwExtensions;
+	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
+	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+	if (enableValidationLayers) {
+		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	}
+
+	return extensions;
+}
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData) {
+
+	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+
+	return VK_FALSE;
+};
+
+void VulkanApp::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
+	createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+
+	createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+				     VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+				     VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+
+	createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+				 VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+				 VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+
+	createInfo.pfnUserCallback = debugCallback;
+}
+
+void VulkanApp::setupDebugMessenger() {
+	if (!enableValidationLayers)
+		return;
+
+	VkDebugUtilsMessengerCreateInfoEXT createInfo;
+	populateDebugMessengerCreateInfo(createInfo);
+
+	if (CreateDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &m_debugMessenger) != VK_SUCCESS) {
+		throw std::runtime_error("failed to set up debug messenger!");
+	}
+}
+
+VkResult VulkanApp::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+	if (func != nullptr) {
+		return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+	} else {
+		return VK_ERROR_EXTENSION_NOT_PRESENT;
+	}
+}
+
+void VulkanApp::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+	if (func != nullptr) {
+		func(instance, debugMessenger, pAllocator);
+	}
+}
+
+void VulkanApp::setObjectName(VkBuffer buffer, const char* name) {
+	VkDebugUtilsObjectNameInfoEXT nameInfo{};
+	nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+	nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
+	nameInfo.objectHandle = reinterpret_cast<uint64_t>(buffer);
+	nameInfo.pObjectName = name;
+	auto func = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(m_device, "vkSetDebugUtilsObjectNameEXT");
+	if (func)
+		func(m_device, &nameInfo);
+}
+
+VkCommandBuffer VulkanApp::beginSingleTimeCommands() {
+	return nullptr;
 }
 
 void VulkanApp::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
-
-
-
 }

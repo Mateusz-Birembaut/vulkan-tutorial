@@ -25,9 +25,9 @@ const std::vector<const char*> deviceExtensions{
 };
 
 #ifdef NDEBUG
-constexpr bool enableValidationLayers = true;
-#else
 constexpr bool enableValidationLayers = false;
+#else
+constexpr bool enableValidationLayers = true;
 #endif // NDEBUG
 
 struct QueueFamilyIndices {
@@ -64,6 +64,7 @@ class VulkanApp {
 
 	void initVulkan();
 	void createInstance();
+	void setupDebugMessenger();
 	void createSurface();
 	void pickPhysicalDevice();
 	void createLogicalDevice();
@@ -114,7 +115,6 @@ class VulkanApp {
 
 	void cleanup();
 	void cleanupSwapChain();
-
 
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
@@ -188,6 +188,16 @@ class VulkanApp {
 	bool m_framebufferResized{false};
 	// VK_ERROR_OUT_OF_DATE_KHR, est pas garantie pendant le resize en fonction de la plateforme
 	// donc ajout du bool pour le gerer correctement
+
+	// DEBUG
+	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
+	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
+	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+	void setObjectName(VkBuffer buffer, const char* name) ;
+	std::vector<const char*> getRequiredExtensions();
+	VkDebugUtilsMessengerEXT m_debugMessenger;
+
+
 };
 
 #endif // VULKAN_APP_H

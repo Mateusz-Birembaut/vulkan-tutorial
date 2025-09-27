@@ -76,8 +76,8 @@ class VulkanApp {
 	void createFrameBuffers();
 	void createCommandPools();
 	void createTextureImage();
-	// void createVertexBuffer();
-	// void createIndexBuffer();
+	void createTextureImageView();
+	void createTextureImageSampler();
 	void createUniformBuffer();
 	void createDescriptorPool();
 	void createDescriptorSets();
@@ -89,10 +89,15 @@ class VulkanApp {
 
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-	void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+	void createImage(uint32_t width, uint32_t height, VkFormat format, VkSharingMode sharingMode, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+	void copyBufferToImage(VkCommandPool commandPool, VkQueue queue, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 	void createCommandBuffers();
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
+	VkCommandBuffer beginSingleTimeCommands(VkCommandPool commandPool);
+	void endSingleTimeCommands(VkCommandBuffer commandBuffer, VkCommandPool commandPool, VkQueue queue);
+	void transitionImageLayout(VkCommandPool commandPool, VkQueue queue, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags propreties);
 
@@ -124,9 +129,7 @@ class VulkanApp {
 
 	VkShaderModule createShaderModule(const std::vector<char>& code);
 
-	VkCommandBuffer beginSingleTimeCommands();
-
-	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+	VkImageView createImageView(VkImage image, VkFormat format);
 
 	GLFWwindow* m_window;
 
@@ -152,11 +155,6 @@ class VulkanApp {
 	VkCommandPool m_commandPool;
 	VkCommandPool m_commandPoolTransfer;
 
-	/* 	VkBuffer m_vertexBuffer;
-		VkDeviceMemory m_vertexBufferMemory;
-
-		VkBuffer m_indexBuffer;
-		VkDeviceMemory m_indexBufferMemory; */
 
 	VkBuffer m_meshBuffer; // combine vertices et indices, c'est ce qui est recommandé
 	VkDeviceMemory m_meshBufferMemory;
@@ -164,6 +162,9 @@ class VulkanApp {
 
 	VkImage m_textureImage;
 	VkDeviceMemory m_textureImageMemory;
+	VkImageView m_textureImageView;
+	
+	VkSampler m_textureSampler;
 
 	// faut un inform buffer par frames in flight
 	std::vector<VkBuffer> m_uniformBuffers;

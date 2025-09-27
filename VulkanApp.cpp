@@ -1152,12 +1152,12 @@ void VulkanApp::drawFrame() {
 	// result peut être VK_SUBOPTIMAL_KHR, la surface match pas exactement la swap chain
 	// mais on peut quand meme l'utiliser donc on conitnue
 
+	updateUniformBuffer(m_currentFrame);
+
 	vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]); // on débloque l'éxécution manuellement, ici pour eviter deadlock
 	// on est sur d'avoir une image a draw
 	// si on reset et que recreate swap chain est appelé, alors on sera toujours
 	// sur la fence m_inFlightFences[m_currentFrame] et on sera bloqué par vkWaitForFences
-
-	updateUniformBuffer(m_currentFrame);
 
 	// record un command buffer pour draw sur l'image
 	vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
@@ -1209,7 +1209,7 @@ void VulkanApp::drawFrame() {
 	// permet de spécifier un array Vkresult
 	// pour savoir si la présentation a marché dans chaque swap chain
 
-	vkQueuePresentKHR(m_presentQueue, &presentInfo);
+	result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
 	// asynchrone, donc le cpu va continuer
 	// et commencer a acquerir une image pour le prochain rendu
 

@@ -1,10 +1,10 @@
 
-CFLAGS = -std=c++17 -O2
+CFLAGS = -std=c++17 -O3 -DNDEBUG
 
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 
-vkTuto: *.cpp *.h
-	g++ $(CFLAGS) -o vkTuto *.cpp $(LDFLAGS)
+vkTuto:
+	g++ $(CFLAGS) -o vkTuto *.cpp tiny_obj_loader.cc $(LDFLAGS)
 
 
 .PHONY: test test-fps clean

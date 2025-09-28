@@ -1,9 +1,10 @@
 #ifndef VULKAN_APP_H
 #define VULKAN_APP_H
 
+#include "Mesh.h"
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-
 #include <cstdlib>
 #include <iostream>
 #include <optional>
@@ -15,6 +16,12 @@ constexpr uint32_t g_screen_width{800};
 constexpr uint32_t g_screen_height{600};
 
 constexpr int g_max_frames_in_flight{2};
+
+const std::string g_model_path = "Models/viking_room.obj";
+const std::string g_texture_path = "Textures/viking_room.png";
+
+const std::string g_vertex_shader = "Shaders/vert.spv";
+const std::string g_fragment_shader = "Shaders/frag.spv";
 
 const std::vector<const char*> validationLayers{
     "VK_LAYER_KHRONOS_validation",
@@ -82,6 +89,7 @@ class VulkanApp {
 	void createUniformBuffer();
 	void createDescriptorPool();
 	void createDescriptorSets();
+	void loadMesh();
 	void createMeshBuffer();
 
 	void createGraphicsCommandBuffers();
@@ -159,7 +167,7 @@ class VulkanApp {
 	VkCommandPool m_commandPool;
 	VkCommandPool m_commandPoolTransfer;
 
-
+	Mesh m_mesh;
 	VkBuffer m_meshBuffer; // combine vertices et indices, c'est ce qui est recommandé
 	VkDeviceMemory m_meshBufferMemory;
 	VkDeviceSize m_indicesOffset;
@@ -198,15 +206,14 @@ class VulkanApp {
 	// VK_ERROR_OUT_OF_DATE_KHR, est pas garantie pendant le resize en fonction de la plateforme
 	// donc ajout du bool pour le gerer correctement
 
+
 	// DEBUG
 	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-	void setObjectName(VkBuffer buffer, const char* name) ;
+	void setObjectName(VkBuffer buffer, const char* name);
 	std::vector<const char*> getRequiredExtensions();
 	VkDebugUtilsMessengerEXT m_debugMessenger;
-
-
 };
 
 #endif // VULKAN_APP_H

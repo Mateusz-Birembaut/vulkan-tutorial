@@ -1,7 +1,9 @@
 #ifndef VERTEX_H
 #define VERTEX_H
 
+#define GLM_ENABLE_EXPERIMENTAL
 #define GLFW_INCLUDE_VULKAN
+#include <glm/gtx/hash.hpp>
 #include <GLFW/glfw3.h>
 #include <array>
 #include <glm/glm.hpp>
@@ -12,6 +14,11 @@ struct Vertex {
 	glm::vec3 col;
 	glm::vec3 normal;
 	glm::vec2 uv;
+
+
+    bool operator==(const Vertex& other) const {
+        return pos == other.pos && col == other.col && normal == other.normal && uv == other.uv;
+    }
 
 	// besoin de décrire a vulkan comment passer cette struct a notre vertex shader
 	// une fois chargé dans la mémoire gpu
@@ -58,21 +65,13 @@ struct Vertex {
 	}
 };
 
-const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
-    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-
-	 {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
-    {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-    {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-};
-
-const std::vector<uint16_t> indices = { // limité a 65000 indices
-    0, 1, 2, 2, 3, 0,
-	4, 5, 6, 6, 7, 4,
-};
-
+namespace std {
+    template<> struct hash<Vertex> {
+        size_t operator()(Vertex const& vertex) const {
+            return ((hash<glm::vec3>()(vertex.pos) ^
+                   (hash<glm::vec3>()(vertex.col) << 1)) >> 1) ^
+                   (hash<glm::vec2>()(vertex.uv) << 1);
+        }
+    };
+}
 #endif // VERTEX_H

@@ -10,6 +10,7 @@
 #include "Utility.h"
 #include "Vertex.h"
 #include "stb_image.h"
+#include "tiny_obj_loader.h"
 
 #include <GLFW/glfw3.h>
 #include <algorithm>
@@ -19,6 +20,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <limits>
+#include <string>
 
 void VulkanApp::initWindow() {
 	glfwInit(); // init la lib
@@ -26,7 +28,7 @@ void VulkanApp::initWindow() {
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // ne pas créer de context openGL
 	// glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);   // désactive le resize parce que c'est relou en gros
 
-	m_window = glfwCreateWindow(g_screen_width, g_screen_height, "Vulkan Triangle", nullptr, nullptr);
+	m_window = glfwCreateWindow(g_screen_width, g_screen_height, "Vulkan App", nullptr, nullptr);
 	glfwSetWindowUserPointer(m_window, this);
 	glfwSetFramebufferSizeCallback(m_window, VulkanApp::framebufferResizeCallback);
 	// callback glfw quand on resize
@@ -87,6 +89,7 @@ void VulkanApp::initVulkan() {
 	createTextureImage();
 	createTextureImageView();
 	createTextureImageSampler();
+	loadMesh();
 	createMeshBuffer();
 	createUniformBuffer();
 	createDescriptorPool();
@@ -470,8 +473,8 @@ void VulkanApp::createDescriptorSetLayout() {
 }
 
 void VulkanApp::createGraphicsPipeline() {
-	auto vertShaderCode{FileReader::readSPV("Shaders/vert.spv")};
-	auto fragShaderCode{FileReader::readSPV("Shaders/frag.spv")};
+	auto vertShaderCode{FileReader::readSPV(g_vertex_shader)};
+	auto fragShaderCode{FileReader::readSPV(g_fragment_shader)};
 
 	VkShaderModule vertShaderModule{createShaderModule(vertShaderCode)};
 	VkShaderModule fragShaderModule{createShaderModule(fragShaderCode)};
@@ -631,11 +634,11 @@ void VulkanApp::createGraphicsPipeline() {
 	depthStencilInfo.depthWriteEnable = VK_TRUE; // si on passe de depth test on écrit la couleur
 	depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS;
 	depthStencilInfo.depthBoundsTestEnable = VK_FALSE; // permet de garder les fragments qui tombe dans une certaine range de depth
-	depthStencilInfo.minDepthBounds = 0.0f; // optional
-	depthStencilInfo.maxDepthBounds = 1.0f; // optional
-	depthStencilInfo.stencilTestEnable = VK_FALSE; 
+	depthStencilInfo.minDepthBounds = 0.0f;		   // optional
+	depthStencilInfo.maxDepthBounds = 1.0f;		   // optional
+	depthStencilInfo.stencilTestEnable = VK_FALSE;
 	depthStencilInfo.front = {}; // optional
-	depthStencilInfo.back = {}; // optional
+	depthStencilInfo.back = {};  // optional
 
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -736,7 +739,7 @@ void VulkanApp::createRenderPass() {
 	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // on stocke pas car une fois draw on va pas le réutiliser, permet optimisations
-	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; 
+	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -752,7 +755,6 @@ void VulkanApp::createRenderPass() {
 	subpass.pColorAttachments = &colorAttachmentRef;
 	subpass.pDepthStencilAttachment = &depthAttachmentRef;
 	// subpass.pPreserveAttachments, données qui doivent etre gardé
-
 
 	VkSubpassDependency dependency{};
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL; // c'est la pass implicit avec la render pass
@@ -795,8 +797,8 @@ void VulkanApp::createFrameBuffers() {
 	for (size_t i{0}; i < m_swapChainImageViews.size(); ++i) {
 
 		std::array<VkImageView, 2> attachments = {
-			m_swapChainImageViews[i],
-			m_depthImageView,
+		    m_swapChainImageViews[i],
+		    m_depthImageView,
 		};
 
 		VkFramebufferCreateInfo framebufferInfo{};
@@ -807,7 +809,6 @@ void VulkanApp::createFrameBuffers() {
 		framebufferInfo.width = m_swapChainExtent.width;
 		framebufferInfo.height = m_swapChainExtent.height;
 		framebufferInfo.layers = 1; // nos swapchain images ont 1 seule image
-		
 
 		if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_swapChainFrameBuffers[i]) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create framebuffer!");
@@ -899,16 +900,16 @@ void VulkanApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkShar
 };
 
 void VulkanApp::createMeshBuffer() {
-	VkDeviceSize verticesSize = sizeof(vertices[0]) * vertices.size();
-	VkDeviceSize indicesSize = sizeof(indices[0]) * indices.size();
+	VkDeviceSize verticesSize = m_mesh.vertexSize() * m_mesh.verticesCount();
+	VkDeviceSize indicesSize = m_mesh.indexSize() * m_mesh.indicesCount();
 
 	// je dois avoir la fin du buffer aligné (un miltiple de ...)
 	// comme j'ai des indices uint16, je dois avoir une size multiple de 2
 	// formule pour aligner au multiple :
 	// aligned = ((operand + (alignment - 1)) & ~(alignment - 1)) voir utility.h
-	m_indicesOffset = AlignTo(verticesSize, 2);
+	//m_indicesOffset = AlignTo(verticesSize, 2);
 	// align 16
-
+	m_indicesOffset = AlignTo(verticesSize, 4);
 	VkDeviceSize bufferSize = m_indicesOffset + indicesSize;
 
 	VkBuffer stagingBuffer;
@@ -924,9 +925,9 @@ void VulkanApp::createMeshBuffer() {
 
 	void* data;
 	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, vertices.data(), static_cast<size_t>(verticesSize));
+	memcpy(data, m_mesh.verticesData(), static_cast<size_t>(verticesSize));
 
-	memcpy(static_cast<char*>(data) + m_indicesOffset, indices.data(), static_cast<size_t>(indicesSize));
+	memcpy(static_cast<char*>(data) + m_indicesOffset, m_mesh.indicesData(), static_cast<size_t>(indicesSize));
 	vkUnmapMemory(m_device, stagingBufferMemory);
 
 	createBuffer(
@@ -1069,7 +1070,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	VkDeviceSize offsets[]{0};
 
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, m_meshBuffer, m_indicesOffset, VK_INDEX_TYPE_UINT16);
+	vkCmdBindIndexBuffer(commandBuffer, m_meshBuffer, m_indicesOffset, VK_INDEX_TYPE_UINT32);
 	// VK_INDEX_TYPE_UINT32 si on veut plus d'indices, mais dans ce cas modif vecteur d'indices aussi
 
 	// comme on a défini le viewport et scissor dynamiquement on doit les spécifier ici
@@ -1101,7 +1102,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 				0, 1, &m_descriptorSets[m_currentFrame], 0, nullptr);
 
 	// utilisation de l'index buffer mtn
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+	vkCmdDrawIndexed(commandBuffer, m_mesh.indicesCount(), 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
 
@@ -1493,7 +1494,7 @@ void VulkanApp::createTextureImage() {
 	int texHeight;
 	int texChannels;
 
-	stbi_uc* pixels = stbi_load("Textures/img_carre.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+	stbi_uc* pixels = stbi_load(g_texture_path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 	VkDeviceSize imgSize = texWidth * texHeight * 4;
 	if (!pixels) {
@@ -1555,7 +1556,7 @@ void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format, Vk
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	imageInfo.imageType = VK_IMAGE_TYPE_2D;
 	imageInfo.extent.depth = 1;
-	imageInfo.extent.height = width;
+	imageInfo.extent.height = height;
 	imageInfo.extent.width = width;
 	imageInfo.mipLevels = 1;
 	imageInfo.arrayLayers = 1;
@@ -1789,42 +1790,41 @@ VkFormat VulkanApp::findSupportedFormat(const std::vector<VkFormat>& candidates,
 	for (VkFormat format : candidates) {
 		VkFormatProperties props;
 		vkGetPhysicalDeviceFormatProperties(m_physicalDevice, format, &props);
-			
-		if( tiling == VK_IMAGE_TILING_OPTIMAL && (props.linearTilingFeatures & features) == features){
+
+		if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.linearTilingFeatures & features) == features) {
 			return format;
-		}else if( tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+		} else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
 			return format;
 		}
-
 	}
 
 	throw std::runtime_error("failed to find supported format");
-
-}	
+}
 
 VkFormat VulkanApp::findDepthFormat() {
-    return findSupportedFormat(
-        {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
-        VK_IMAGE_TILING_OPTIMAL,
-        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
-    );
+	return findSupportedFormat(
+	    {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+	    VK_IMAGE_TILING_OPTIMAL,
+	    VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
 bool VulkanApp::hasStencilComponent(VkFormat format) {
-    return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
 void VulkanApp::createDepthResources() {
 
 	VkFormat depthFormat = findDepthFormat();
 
-	createImage(m_swapChainExtent.width, m_swapChainExtent.height, depthFormat, 
-		VK_SHARING_MODE_EXCLUSIVE, 
-		VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_depthImage, m_depthImageMemory
-	);
+	createImage(m_swapChainExtent.width, m_swapChainExtent.height, depthFormat,
+		    VK_SHARING_MODE_EXCLUSIVE,
+		    VK_IMAGE_TILING_OPTIMAL,
+		    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_depthImage, m_depthImageMemory);
 
 	m_depthImageView = createImageView(m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+}
 
+void VulkanApp::loadMesh(){
+	m_mesh.loadMesh(g_model_path);
 }

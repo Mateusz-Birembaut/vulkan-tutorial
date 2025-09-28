@@ -1238,6 +1238,11 @@ void VulkanApp::cleanupSwapChain() {
 	for (auto imageView : m_swapChainImageViews) {
 		vkDestroyImageView(m_device, imageView, nullptr);
 	}
+
+	vkDestroyImageView(m_device, m_depthImageView, nullptr);
+	vkDestroyImage(m_device, m_depthImage, nullptr);
+	vkFreeMemory(m_device, m_depthImageMemory, nullptr);
+
 	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
 }
 
@@ -1274,9 +1279,6 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 	cleanupSwapChain();
 
 	vkDestroySampler(m_device, m_textureSampler, nullptr);
-	vkDestroyImageView(m_device, m_depthImageView, nullptr);
-	vkDestroyImage(m_device, m_depthImage, nullptr);
-	vkFreeMemory(m_device, m_depthImageMemory, nullptr);
 	vkDestroyImageView(m_device, m_textureImageView, nullptr);
 	vkDestroyImage(m_device, m_textureImage, nullptr);
 	vkFreeMemory(m_device, m_textureImageMemory, nullptr);

@@ -75,6 +75,7 @@ class VulkanApp {
 	void createGraphicsPipeline();
 	void createFrameBuffers();
 	void createCommandPools();
+	void createDepthResources();
 	void createTextureImage();
 	void createTextureImageView();
 	void createTextureImageSampler();
@@ -121,6 +122,9 @@ class VulkanApp {
 	void cleanup();
 	void cleanupSwapChain();
 
+	bool hasStencilComponent(VkFormat format);
+	VkFormat findDepthFormat();
+	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -129,7 +133,7 @@ class VulkanApp {
 
 	VkShaderModule createShaderModule(const std::vector<char>& code);
 
-	VkImageView createImageView(VkImage image, VkFormat format);
+	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
 	GLFWwindow* m_window;
 
@@ -160,10 +164,14 @@ class VulkanApp {
 	VkDeviceMemory m_meshBufferMemory;
 	VkDeviceSize m_indicesOffset;
 
+	VkImage m_depthImage;
+	VkDeviceMemory m_depthImageMemory;
+	VkImageView m_depthImageView;
+
 	VkImage m_textureImage;
 	VkDeviceMemory m_textureImageMemory;
 	VkImageView m_textureImageView;
-	
+
 	VkSampler m_textureSampler;
 
 	// faut un inform buffer par frames in flight

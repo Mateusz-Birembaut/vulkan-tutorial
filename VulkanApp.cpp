@@ -436,7 +436,7 @@ void VulkanApp::createImageViews() {
 
 	for (size_t i = 0; i < m_swapChainImages.size(); i++) {
 
-		m_swapChainImageViews[i] = createImageView(m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+		m_swapChainImageViews[i] = createImageView(m_swapChainImages[i], m_swapChainImageFormat, m_mipLevels, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 	// std::cout << "all image views created" << std::endl;
 }
@@ -907,7 +907,7 @@ void VulkanApp::createMeshBuffer() {
 	// comme j'ai des indices uint16, je dois avoir une size multiple de 2
 	// formule pour aligner au multiple :
 	// aligned = ((operand + (alignment - 1)) & ~(alignment - 1)) voir utility.h
-	//m_indicesOffset = AlignTo(verticesSize, 2);
+	// m_indicesOffset = AlignTo(verticesSize, 2);
 	// align 16
 	m_indicesOffset = AlignTo(verticesSize, 4);
 	VkDeviceSize bufferSize = m_indicesOffset + indicesSize;
@@ -1501,6 +1501,9 @@ void VulkanApp::createTextureImage() {
 		throw std::runtime_error("failed to load image!");
 	}
 
+	// pour avoir notre mipmap on prend la + grande dimension, on recupere par combien de fois on peut diviser par 2
+	m_mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight))));
+
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
 
@@ -1521,34 +1524,31 @@ void VulkanApp::createTextureImage() {
 	stbi_image_free(pixels);
 
 	createImage(texWidth, texHeight,
-		    VK_FORMAT_R8G8B8A8_SRGB,	// 4 int8 pour chaque pixels
+		    VK_FORMAT_R8G8B8A8_SRGB /*4 int8 pour chaque pixels */, m_mipLevels,
 		    VK_SHARING_MODE_CONCURRENT, // besoin de la queue transfer et graphics comme j'ai les deux dans deux queues différentes
 		    VK_IMAGE_TILING_OPTIMAL,	// ici pour avoir un accès le plus efficace possible
 		    // tiling linéaire row major order
-		    VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, // on veut pouvoir transferer des données, et l'utiliser comme sampler
-		    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,			  // stocker de manière a avoir un accès rapide
+		    VK_IMAGE_USAGE_TRANSFER_SRC_BIT /*l'image servira de source et destinaation pour les transfert car on va generer les mipmaps*/ | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, // on veut pouvoir transferer des données, et l'utiliser comme sampler
+		    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,																			   // stocker de manière a avoir un accès rapide
 		    m_textureImage, m_textureImageMemory);
 
 	// modifier l'état de l'image en gros pour effectuer certaines opérations ici
 	// VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL pour copier les données
 	transitionImageLayout(m_commandPoolTransfer, m_transferQueue, m_textureImage,
-			      VK_FORMAT_R8G8B8A8_SRGB,
+			      VK_FORMAT_R8G8B8A8_SRGB, m_mipLevels,
 			      VK_IMAGE_LAYOUT_UNDEFINED /*on s'occupe pas de l'état precedent*/,
 			      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 	copyBufferToImage(m_commandPoolTransfer, m_transferQueue, stagingBuffer, m_textureImage, texWidth, texHeight);
 
-	// on a copié, maintenant on met l'image en état "shader va lire"
-	transitionImageLayout(m_commandPool, m_graphicsQueue, m_textureImage,
-			      VK_FORMAT_R8G8B8A8_SRGB,
-			      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	// une 
+	generateMipmaps(m_commandPool, m_graphicsQueue, m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, m_mipLevels);
 
 	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
 	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
 }
 
-void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format, VkSharingMode sharingMode,
+void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format, uint32_t mipLevels, VkSharingMode sharingMode,
 			    VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
 			    VkImage& image, VkDeviceMemory& imageMemory) {
 
@@ -1558,7 +1558,7 @@ void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format, Vk
 	imageInfo.extent.depth = 1;
 	imageInfo.extent.height = height;
 	imageInfo.extent.width = width;
-	imageInfo.mipLevels = 1;
+	imageInfo.mipLevels = mipLevels;
 	imageInfo.arrayLayers = 1;
 	imageInfo.format = format;
 	imageInfo.tiling = tiling;
@@ -1635,7 +1635,7 @@ void VulkanApp::endSingleTimeCommands(VkCommandBuffer commandBuffer, VkCommandPo
 }
 
 void VulkanApp::transitionImageLayout(VkCommandPool commandPool, VkQueue queue,
-				      VkImage image, VkFormat format,
+				      VkImage image, VkFormat format, uint32_t mipLevels,
 				      VkImageLayout oldLayout, VkImageLayout newLayout) {
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands(commandPool);
 
@@ -1651,7 +1651,7 @@ void VulkanApp::transitionImageLayout(VkCommandPool commandPool, VkQueue queue,
 	barrier.image = image;
 	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.levelCount = mipLevels;
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = 1;
 
@@ -1714,7 +1714,7 @@ void VulkanApp::copyBufferToImage(VkCommandPool commandPool, VkQueue queue, VkBu
 	endSingleTimeCommands(commandBuffer, commandPool, queue);
 }
 
-VkImageView VulkanApp::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
+VkImageView VulkanApp::createImageView(VkImage image, VkFormat format, uint32_t mipLevels, VkImageAspectFlags aspectFlags) {
 	VkImageViewCreateInfo viewInfo{};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	viewInfo.image = image;
@@ -1724,7 +1724,7 @@ VkImageView VulkanApp::createImageView(VkImage image, VkFormat format, VkImageAs
 	viewInfo.format = format;
 	viewInfo.subresourceRange.aspectMask = aspectFlags;
 	viewInfo.subresourceRange.baseMipLevel = 0;
-	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.levelCount = mipLevels;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
 	viewInfo.subresourceRange.layerCount = 1;
 	// défini le but de nos images, ici se sera seulement pour ecrire les couleurs
@@ -1747,7 +1747,7 @@ VkImageView VulkanApp::createImageView(VkImage image, VkFormat format, VkImageAs
 }
 
 void VulkanApp::createTextureImageView() {
-	m_textureImageView = createImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+	m_textureImageView = createImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, m_mipLevels, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 void VulkanApp::createTextureImageSampler() {
@@ -1777,7 +1777,7 @@ void VulkanApp::createTextureImageSampler() {
 	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	samplerInfo.mipLodBias = 0.0f;
 	samplerInfo.minLod = 0.0f;
-	samplerInfo.maxLod = 0.0f;
+	samplerInfo.maxLod = VK_LOD_CLAMP_NONE; // == 1000.0f permet d'utiliser toutes les mipmaps
 	// mipmapping
 
 	if (vkCreateSampler(m_device, &samplerInfo, nullptr, &m_textureSampler)) {
@@ -1816,15 +1816,111 @@ void VulkanApp::createDepthResources() {
 
 	VkFormat depthFormat = findDepthFormat();
 
-	createImage(m_swapChainExtent.width, m_swapChainExtent.height, depthFormat,
+	createImage(m_swapChainExtent.width, m_swapChainExtent.height, depthFormat, 1,
 		    VK_SHARING_MODE_EXCLUSIVE,
 		    VK_IMAGE_TILING_OPTIMAL,
 		    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 		    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_depthImage, m_depthImageMemory);
 
-	m_depthImageView = createImageView(m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	m_depthImageView = createImageView(m_depthImage, depthFormat, 1, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
-void VulkanApp::loadMesh(){
+void VulkanApp::loadMesh() {
 	m_mesh.loadMesh(g_model_path);
+}
+
+void VulkanApp::generateMipmaps(VkCommandPool commandPool, VkQueue queue, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
+	// on regarde si le format support le linear blitting
+	VkFormatProperties formatProperties;
+	vkGetPhysicalDeviceFormatProperties(m_physicalDevice, imageFormat, &formatProperties);
+	if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+		throw std::runtime_error("texture image format does not support linear blitting!");
+	}
+
+	VkCommandBuffer commandBuffer = beginSingleTimeCommands(commandPool);
+
+	VkImageMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.image = image;
+
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+	barrier.subresourceRange.levelCount = 1;
+
+	int32_t mipWidth = texWidth;
+	int32_t mipHeight = texHeight;
+
+	for (uint32_t i = 1; i < mipLevels; i++) {
+		barrier.subresourceRange.baseMipLevel = i - 1;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+				     0, nullptr,
+				     0, nullptr,
+				     1, &barrier); // permet d'attendre que le transfert avec copy ou la mipmap soit fini avant de continuer et de pouvoir écrire
+
+		VkImageBlit blit{};
+		blit.srcOffsets[0] = {0, 0, 0};
+		blit.srcOffsets[1] = {mipWidth, mipHeight, 1};
+		blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		blit.srcSubresource.mipLevel = i - 1;
+		blit.srcSubresource.baseArrayLayer = 0;
+		blit.srcSubresource.layerCount = 1;
+		// on va prendre la taille de la texture du miplevel precendent i-1
+
+		blit.dstOffsets[0] = {0, 0, 0};
+		blit.dstOffsets[1] = {
+		    mipWidth > 1 ? mipWidth / 2 : 1,
+		    mipHeight > 1 ? mipHeight / 2 : 1,
+		    1};
+		blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		blit.dstSubresource.mipLevel = i;
+		blit.dstSubresource.baseArrayLayer = 0;
+		blit.dstSubresource.layerCount = 1;
+		// on va "écrire" le miplevel i en fonction des données du miplevel precedent
+
+		vkCmdBlitImage(commandBuffer, // queue a besoin de la queue graphics
+			       image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			       image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			       1, &blit,
+			       VK_FILTER_LINEAR); // interpolation
+
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		vkCmdPipelineBarrier(commandBuffer, // attend que blit termine avant de sample
+				     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+				     0, nullptr,
+				     0, nullptr,
+				     1, &barrier);
+
+		if (mipWidth > 1)
+			mipWidth /= 2;
+		if (mipHeight > 1)
+			mipHeight /= 2;
+	}
+
+	// on transitionne en mode shader read le dernier mipLevel
+	barrier.subresourceRange.baseMipLevel = mipLevels - 1;
+	barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+	vkCmdPipelineBarrier(commandBuffer,
+			     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+			     0, nullptr,
+			     0, nullptr,
+			     1, &barrier);
+
+	endSingleTimeCommands(commandBuffer, commandPool, queue);
 }

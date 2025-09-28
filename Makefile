@@ -1,5 +1,5 @@
 
-CFLAGS = -std=c++17 -O3 -DNDEBUG
+CFLAGS = -std=c++17 -O3
 
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 

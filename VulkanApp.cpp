@@ -84,6 +84,7 @@ void VulkanApp::initVulkan() {
 	createDescriptorSetLayout();
 	createGraphicsPipeline();
 	createCommandPools();
+	createColorRessources();
 	createDepthResources();
 	createFrameBuffers();
 	createTextureImage();
@@ -126,6 +127,7 @@ void VulkanApp::createLogicalDevice() { // les queues sont créées en même tem
 	VkPhysicalDeviceFeatures deviceFeatures{}; // le set de device features qu'on va utiliser (par exemple ceux de vkGetPhysicalDeviceFeatures)
 	// pour l'instant on laisse a VK_FALSE
 	deviceFeatures.samplerAnisotropy = VK_TRUE;
+	deviceFeatures.sampleRateShading = VK_TRUE;
 
 	VkDeviceCreateInfo deviceCreateInfo{}; // create logical device
 	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -167,6 +169,7 @@ void VulkanApp::pickPhysicalDevice() {
 	for (const auto& device : devices) {
 		if (isDeviceSuitable(device)) {
 			m_physicalDevice = device;
+			m_msaaSamples = getMaxMsaa();
 			break;
 		}
 	}
@@ -436,7 +439,7 @@ void VulkanApp::createImageViews() {
 
 	for (size_t i = 0; i < m_swapChainImages.size(); i++) {
 
-		m_swapChainImageViews[i] = createImageView(m_swapChainImages[i], m_swapChainImageFormat, m_mipLevels, VK_IMAGE_ASPECT_COLOR_BIT);
+		m_swapChainImageViews[i] = createImageView(m_swapChainImages[i], m_swapChainImageFormat, 1, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 	// std::cout << "all image views created" << std::endl;
 }
@@ -578,8 +581,9 @@ void VulkanApp::createGraphicsPipeline() {
 
 	VkPipelineMultisampleStateCreateInfo multisampling{}; // pour l'instant désactivé
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisampling.sampleShadingEnable = VK_FALSE;
-	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multisampling.sampleShadingEnable = VK_TRUE;
+	multisampling.rasterizationSamples = m_msaaSamples;
+	multisampling.minSampleShading = 0.2f;
 
 	// depth / stencil testing
 	// si on l'utilise on fait un VkPipelineDepthStencilStateCreateInfo
@@ -699,7 +703,7 @@ VkShaderModule VulkanApp::createShaderModule(const std::vector<char>& code) {
 void VulkanApp::createRenderPass() {
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = m_swapChainImageFormat; // devrait etre le meme que notre swapchain
-	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT; // pas de multi sampling donc 1 sample
+	colorAttachment.samples = m_msaaSamples; // pas de multi sampling donc 1 sample
 
 	// comment les couleur / depth data vont etre géré
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -726,7 +730,7 @@ void VulkanApp::createRenderPass() {
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // ce qu'il y aura avant le début de la render pass
 	// on ne s'interresse pas au layout de la dernière image, les donnees sont pas forcément gardé
 	// mais de toutes facon on clear avant d'écrire donc pas grave
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	// indique que l'image sera utilisée pour être présentée à l'écran via la swapchain après la fin de la render pass.
 
 	VkAttachmentReference colorAttachmentRef{};
@@ -736,7 +740,7 @@ void VulkanApp::createRenderPass() {
 
 	VkAttachmentDescription depthAttachment{};
 	depthAttachment.format = findDepthFormat(); // doit etre le meme format que l'image
-	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	depthAttachment.samples = m_msaaSamples;
 	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // on stocke pas car une fois draw on va pas le réutiliser, permet optimisations
 	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -748,12 +752,27 @@ void VulkanApp::createRenderPass() {
 	depthAttachmentRef.attachment = 1;
 	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
+    VkAttachmentDescription colorAttachmentResolve{};
+    colorAttachmentResolve.format = m_swapChainImageFormat;
+    colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    VkAttachmentReference colorAttachmentResolveRef{};
+    colorAttachmentResolveRef.attachment = 2;
+    colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
 	VkSubpassDescription subpass{};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	// peut etre un passe de compute donc on précise que c'est une de graphisme
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colorAttachmentRef;
 	subpass.pDepthStencilAttachment = &depthAttachmentRef;
+	subpass.pResolveAttachments = &colorAttachmentResolveRef;
 	// subpass.pPreserveAttachments, données qui doivent etre gardé
 
 	VkSubpassDependency dependency{};
@@ -765,7 +784,7 @@ void VulkanApp::createRenderPass() {
 	// pour ça, on attend au niveau de la color attachment stage
 	// mtn on attend aussi que le depth buffer test
 
-	dependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT; // a quel stage ca arrive
+	dependency.srcAccessMask =  VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT; // a quel stage ca arrive
 
 	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
@@ -773,7 +792,7 @@ void VulkanApp::createRenderPass() {
 	// le rendu des pixels dans le framebuffer ne commence pas tant
 	// qu'on est pas dans l'état ecriture en gros
 
-	std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
+	std::array<VkAttachmentDescription, 3> attachments = {colorAttachment, depthAttachment, colorAttachmentResolve};
 
 	VkRenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -796,9 +815,10 @@ void VulkanApp::createFrameBuffers() {
 
 	for (size_t i{0}; i < m_swapChainImageViews.size(); ++i) {
 
-		std::array<VkImageView, 2> attachments = {
-		    m_swapChainImageViews[i],
+		std::array<VkImageView, 3> attachments = {
+			m_colorImageView,
 		    m_depthImageView,
+			m_swapChainImageViews[i],
 		};
 
 		VkFramebufferCreateInfo framebufferInfo{};
@@ -1240,6 +1260,10 @@ void VulkanApp::cleanupSwapChain() {
 		vkDestroyImageView(m_device, imageView, nullptr);
 	}
 
+	vkDestroyImageView(m_device, m_colorImageView, nullptr);
+	vkDestroyImage(m_device, m_colorImage, nullptr);
+	vkFreeMemory(m_device, m_colorImageMemory, nullptr);
+
 	vkDestroyImageView(m_device, m_depthImageView, nullptr);
 	vkDestroyImage(m_device, m_depthImage, nullptr);
 	vkFreeMemory(m_device, m_depthImageMemory, nullptr);
@@ -1265,6 +1289,7 @@ void VulkanApp::recreateSwapChain() {
 	createSwapChain();
 	createImageViews();
 	// les images views doivent etre recrée car sont lies au dimensions des images de la swapchain
+	createColorRessources();
 	createDepthResources();
 	createFrameBuffers();
 	// pareil pour les framebuffers
@@ -1525,6 +1550,7 @@ void VulkanApp::createTextureImage() {
 
 	createImage(texWidth, texHeight,
 		    VK_FORMAT_R8G8B8A8_SRGB /*4 int8 pour chaque pixels */, m_mipLevels,
+			VK_SAMPLE_COUNT_1_BIT,
 		    VK_SHARING_MODE_CONCURRENT, // besoin de la queue transfer et graphics comme j'ai les deux dans deux queues différentes
 		    VK_IMAGE_TILING_OPTIMAL,	// ici pour avoir un accès le plus efficace possible
 		    // tiling linéaire row major order
@@ -1548,7 +1574,8 @@ void VulkanApp::createTextureImage() {
 	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
 }
 
-void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format, uint32_t mipLevels, VkSharingMode sharingMode,
+void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format, uint32_t mipLevels, 
+				VkSampleCountFlagBits numSamples, VkSharingMode sharingMode,
 			    VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
 			    VkImage& image, VkDeviceMemory& imageMemory) {
 
@@ -1558,13 +1585,14 @@ void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format, ui
 	imageInfo.extent.depth = 1;
 	imageInfo.extent.height = height;
 	imageInfo.extent.width = width;
-	imageInfo.mipLevels = mipLevels;
+    imageInfo.mipLevels = mipLevels;
 	imageInfo.arrayLayers = 1;
 	imageInfo.format = format;
 	imageInfo.tiling = tiling;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageInfo.usage = usage;
 	imageInfo.sharingMode = sharingMode;
+	imageInfo.samples = numSamples;
 
 	auto indices = findQueueFamilies(m_physicalDevice);
 	std::set<uint32_t> uniqueIndices{indices.transferFamily.value(), indices.graphicsFamily.value()};
@@ -1573,7 +1601,7 @@ void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format, ui
 		imageInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueIndices.size());
 		imageInfo.pQueueFamilyIndices = queueIndices.data(); //
 	}
-	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT; // multisampling
+
 	imageInfo.flags = 0;			   // Optional, voir pour 3D voxel en grande partie vide ex => nuages
 
 	if (vkCreateImage(m_device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
@@ -1816,7 +1844,7 @@ void VulkanApp::createDepthResources() {
 
 	VkFormat depthFormat = findDepthFormat();
 
-	createImage(m_swapChainExtent.width, m_swapChainExtent.height, depthFormat, 1,
+	createImage(m_swapChainExtent.width, m_swapChainExtent.height, depthFormat, 1, m_msaaSamples,
 		    VK_SHARING_MODE_EXCLUSIVE,
 		    VK_IMAGE_TILING_OPTIMAL,
 		    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -1923,4 +1951,31 @@ void VulkanApp::generateMipmaps(VkCommandPool commandPool, VkQueue queue, VkImag
 			     1, &barrier);
 
 	endSingleTimeCommands(commandBuffer, commandPool, queue);
+}
+
+VkSampleCountFlagBits VulkanApp::getMaxMsaa(){
+	VkPhysicalDeviceProperties properties;
+	vkGetPhysicalDeviceProperties(m_physicalDevice, &properties);
+
+	VkSampleCountFlags counts = properties.limits.framebufferColorSampleCounts & properties.limits.framebufferDepthSampleCounts;
+
+	if(counts & VK_SAMPLE_COUNT_64_BIT) return VK_SAMPLE_COUNT_64_BIT;
+	if(counts & VK_SAMPLE_COUNT_32_BIT) return VK_SAMPLE_COUNT_32_BIT;
+	if(counts & VK_SAMPLE_COUNT_16_BIT) return VK_SAMPLE_COUNT_16_BIT;
+	if(counts & VK_SAMPLE_COUNT_8_BIT) return VK_SAMPLE_COUNT_8_BIT;
+	if(counts & VK_SAMPLE_COUNT_4_BIT) return VK_SAMPLE_COUNT_4_BIT;
+	if(counts & VK_SAMPLE_COUNT_2_BIT) return VK_SAMPLE_COUNT_2_BIT;
+
+	return VK_SAMPLE_COUNT_1_BIT;
+}
+
+void VulkanApp::createColorRessources(){
+    VkFormat colorFormat = m_swapChainImageFormat;
+
+	createImage(m_swapChainExtent.width, m_swapChainExtent.height, colorFormat, 1, m_msaaSamples,
+		VK_SHARING_MODE_EXCLUSIVE, VK_IMAGE_TILING_OPTIMAL, 
+		VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_colorImage, m_colorImageMemory);
+
+	m_colorImageView = createImageView(m_colorImage, colorFormat, 1, VK_IMAGE_ASPECT_COLOR_BIT);
 }

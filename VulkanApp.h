@@ -82,6 +82,7 @@ class VulkanApp {
 	void createGraphicsPipeline();
 	void createFrameBuffers();
 	void createCommandPools();
+	void createColorRessources();
 	void createDepthResources();
 	void createTextureImage();
 	void createTextureImageView();
@@ -98,7 +99,7 @@ class VulkanApp {
 
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-	void createImage(uint32_t width, uint32_t height, VkFormat format, uint32_t mipLevels, VkSharingMode sharingMode, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+	void createImage(uint32_t width, uint32_t height, VkFormat format, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkSharingMode sharingMode, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 	void copyBufferToImage(VkCommandPool commandPool, VkQueue queue, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 	void createCommandBuffers();
@@ -208,6 +209,13 @@ class VulkanApp {
 	bool m_framebufferResized{false};
 	// VK_ERROR_OUT_OF_DATE_KHR, est pas garantie pendant le resize en fonction de la plateforme
 	// donc ajout du bool pour le gerer correctement
+
+	VkImage m_colorImage;
+	VkDeviceMemory m_colorImageMemory;
+	VkImageView m_colorImageView;
+
+	VkSampleCountFlagBits m_msaaSamples;
+	VkSampleCountFlagBits getMaxMsaa();
 
 
 	// DEBUG

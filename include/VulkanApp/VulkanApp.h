@@ -2,7 +2,9 @@
 #define VULKAN_APP_H
 
 
-#include <include/Core/VulkanContext.h>
+#include <VulkanApp/Core/VulkanContext.h>
+#include <VulkanApp/Core/SwapChain.h>
+
 #include "Mesh.h"
 #include "Camera.h"
 
@@ -49,7 +51,11 @@ class VulkanApp {
 
       private:
 
+
+		GLFWwindow* m_window;
+
 		VulkanContext m_context;
+		SwapChain m_swapchain;
 
 	void initWindow();
 
@@ -59,8 +65,8 @@ class VulkanApp {
 	void createSurface(); //
 	void pickPhysicalDevice(); //
 	void createLogicalDevice(); //  */
-	void createSwapChain();
-	void createImageViews();
+/* 	void createSwapChain();
+	void createImageViews(); */
 	void createRenderPass();
 	void createDescriptorSetLayout();
 	void createGraphicsPipeline();
@@ -102,9 +108,7 @@ class VulkanApp {
 
 	void recordGraphicsCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
-	bool checkValidationLayerSupport();
-	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-	bool isDeviceSuitable(VkPhysicalDevice device);
+
 
 	void setupDebugMessenger(VkDevice device);
 
@@ -122,9 +126,7 @@ class VulkanApp {
 	//QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 	//SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
-	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+
 
 	VkShaderModule createShaderModule(const std::vector<char>& code);
 
@@ -132,12 +134,8 @@ class VulkanApp {
 
 	void generateMipmaps(VkCommandPool commandPool, VkQueue queue, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
-	GLFWwindow* m_window;
 
-	VkSwapchainKHR m_swapChain;
-	std::vector<VkImage> m_swapChainImages;
-	VkFormat m_swapChainImageFormat;
-	VkExtent2D m_swapChainExtent;
+
 
 	VkRenderPass m_renderPass;
 	VkDescriptorSetLayout m_descriptorSetLayout;

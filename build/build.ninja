@@ -18,7 +18,7 @@
 #############################################
 # Minimal version of Ninja required by this file
 
-ninja_required_version = 1.5
+ninja_required_version = 1.8
 
 
 #############################################
@@ -49,38 +49,45 @@ cmake_ninja_workdir = /home/mat/VulkanTutorial/build/
 
 build cmake_object_order_depends_target_VulkanTutorial: phony || CMakeFiles/VulkanTutorial.dir
 
-build CMakeFiles/VulkanTutorial.dir/src/main.cpp.o: CXX_COMPILER__VulkanTutorial_unscanned_Debug /home/mat/VulkanTutorial/src/main.cpp || cmake_object_order_depends_target_VulkanTutorial
-  DEP_FILE = CMakeFiles/VulkanTutorial.dir/src/main.cpp.o.d
+build CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o: CXX_COMPILER__VulkanTutorial_unscanned_Debug /home/mat/VulkanTutorial/src/Core/SwapChain.cpp || cmake_object_order_depends_target_VulkanTutorial
+  DEP_FILE = CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o.d
   FLAGS = -g -std=gnu++17
-  INCLUDES = -I/home/mat/VulkanTutorial -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial/include
+  INCLUDES = -I/home/mat/VulkanTutorial/include -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial
   OBJECT_DIR = CMakeFiles/VulkanTutorial.dir
-  OBJECT_FILE_DIR = CMakeFiles/VulkanTutorial.dir/src
-
-build CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o: CXX_COMPILER__VulkanTutorial_unscanned_Debug /home/mat/VulkanTutorial/src/VulkanApp.cpp || cmake_object_order_depends_target_VulkanTutorial
-  DEP_FILE = CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o.d
-  FLAGS = -g -std=gnu++17
-  INCLUDES = -I/home/mat/VulkanTutorial -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial/include
-  OBJECT_DIR = CMakeFiles/VulkanTutorial.dir
-  OBJECT_FILE_DIR = CMakeFiles/VulkanTutorial.dir/src
+  OBJECT_FILE_DIR = CMakeFiles/VulkanTutorial.dir/src/Core
 
 build CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o: CXX_COMPILER__VulkanTutorial_unscanned_Debug /home/mat/VulkanTutorial/src/Core/VulkanContext.cpp || cmake_object_order_depends_target_VulkanTutorial
   DEP_FILE = CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o.d
   FLAGS = -g -std=gnu++17
-  INCLUDES = -I/home/mat/VulkanTutorial -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial/include
+  INCLUDES = -I/home/mat/VulkanTutorial/include -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial
   OBJECT_DIR = CMakeFiles/VulkanTutorial.dir
   OBJECT_FILE_DIR = CMakeFiles/VulkanTutorial.dir/src/Core
 
 build CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o: CXX_COMPILER__VulkanTutorial_unscanned_Debug /home/mat/VulkanTutorial/src/Core/VulkanDebug.cpp || cmake_object_order_depends_target_VulkanTutorial
   DEP_FILE = CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o.d
   FLAGS = -g -std=gnu++17
-  INCLUDES = -I/home/mat/VulkanTutorial -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial/include
+  INCLUDES = -I/home/mat/VulkanTutorial/include -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial
   OBJECT_DIR = CMakeFiles/VulkanTutorial.dir
   OBJECT_FILE_DIR = CMakeFiles/VulkanTutorial.dir/src/Core
+
+build CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o: CXX_COMPILER__VulkanTutorial_unscanned_Debug /home/mat/VulkanTutorial/src/VulkanApp.cpp || cmake_object_order_depends_target_VulkanTutorial
+  DEP_FILE = CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o.d
+  FLAGS = -g -std=gnu++17
+  INCLUDES = -I/home/mat/VulkanTutorial/include -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial
+  OBJECT_DIR = CMakeFiles/VulkanTutorial.dir
+  OBJECT_FILE_DIR = CMakeFiles/VulkanTutorial.dir/src
+
+build CMakeFiles/VulkanTutorial.dir/src/main.cpp.o: CXX_COMPILER__VulkanTutorial_unscanned_Debug /home/mat/VulkanTutorial/src/main.cpp || cmake_object_order_depends_target_VulkanTutorial
+  DEP_FILE = CMakeFiles/VulkanTutorial.dir/src/main.cpp.o.d
+  FLAGS = -g -std=gnu++17
+  INCLUDES = -I/home/mat/VulkanTutorial/include -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial
+  OBJECT_DIR = CMakeFiles/VulkanTutorial.dir
+  OBJECT_FILE_DIR = CMakeFiles/VulkanTutorial.dir/src
 
 build CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o: CXX_COMPILER__VulkanTutorial_unscanned_Debug /home/mat/VulkanTutorial/tiny_obj_loader.cc || cmake_object_order_depends_target_VulkanTutorial
   DEP_FILE = CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o.d
   FLAGS = -g -std=gnu++17
-  INCLUDES = -I/home/mat/VulkanTutorial -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial/include
+  INCLUDES = -I/home/mat/VulkanTutorial/include -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial
   OBJECT_DIR = CMakeFiles/VulkanTutorial.dir
   OBJECT_FILE_DIR = CMakeFiles/VulkanTutorial.dir
 
@@ -92,7 +99,7 @@ build CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o: CXX_COMPILER__VulkanTu
 #############################################
 # Link the executable VulkanTutorial
 
-build VulkanTutorial: CXX_EXECUTABLE_LINKER__VulkanTutorial_Debug CMakeFiles/VulkanTutorial.dir/src/main.cpp.o CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o | /usr/lib/x86_64-linux-gnu/libvulkan.so /usr/lib/x86_64-linux-gnu/libglfw.so.3.3
+build VulkanTutorial: CXX_EXECUTABLE_LINKER__VulkanTutorial_Debug CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o CMakeFiles/VulkanTutorial.dir/src/main.cpp.o CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o | /usr/lib/x86_64-linux-gnu/libvulkan.so /usr/lib/x86_64-linux-gnu/libglfw.so.3.3
   FLAGS = -g
   LINK_LIBRARIES = /usr/lib/x86_64-linux-gnu/libvulkan.so  /usr/lib/x86_64-linux-gnu/libglfw.so.3.3
   OBJECT_DIR = CMakeFiles/VulkanTutorial.dir
@@ -142,16 +149,30 @@ build all: phony VulkanTutorial
 
 
 #############################################
+# Phony target to force glob verification run.
+
+build /home/mat/VulkanTutorial/build/CMakeFiles/VerifyGlobs.cmake_force: phony
+
+
+#############################################
+# Re-run CMake to check if globbed directories changed.
+
+build /home/mat/VulkanTutorial/build/CMakeFiles/cmake.verify_globs: VERIFY_GLOBS | /home/mat/VulkanTutorial/build/CMakeFiles/VerifyGlobs.cmake_force
+  pool = console
+  restat = 1
+
+
+#############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | /home/mat/VulkanTutorial/CMakeLists.txt /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3Config.cmake /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3ConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3Targets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3Targets.cmake /usr/share/cmake-3.28/Modules/CMakeCInformation.cmake /usr/share/cmake-3.28/Modules/CMakeCXXInformation.cmake /usr/share/cmake-3.28/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-3.28/Modules/CMakeGenericSystem.cmake /usr/share/cmake-3.28/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-3.28/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-3.28/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU-C.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU-CXX.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU.cmake /usr/share/cmake-3.28/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-3.28/Modules/FindPackageMessage.cmake /usr/share/cmake-3.28/Modules/FindVulkan.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU-C.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-3.28/Modules/Platform/Linux.cmake /usr/share/cmake-3.28/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.28.3/CMakeCCompiler.cmake CMakeFiles/3.28.3/CMakeCXXCompiler.cmake CMakeFiles/3.28.3/CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE /home/mat/VulkanTutorial/build/CMakeFiles/cmake.verify_globs | /home/mat/VulkanTutorial/CMakeLists.txt /home/mat/VulkanTutorial/build/CMakeFiles/VerifyGlobs.cmake /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3Config.cmake /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3ConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3Targets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3Targets.cmake /usr/share/cmake-3.28/Modules/CMakeCXXInformation.cmake /usr/share/cmake-3.28/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-3.28/Modules/CMakeGenericSystem.cmake /usr/share/cmake-3.28/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-3.28/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-3.28/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU-CXX.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU.cmake /usr/share/cmake-3.28/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-3.28/Modules/FindPackageMessage.cmake /usr/share/cmake-3.28/Modules/FindVulkan.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-3.28/Modules/Platform/Linux.cmake /usr/share/cmake-3.28/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.28.3/CMakeCXXCompiler.cmake CMakeFiles/3.28.3/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build /home/mat/VulkanTutorial/CMakeLists.txt /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3Config.cmake /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3ConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3Targets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3Targets.cmake /usr/share/cmake-3.28/Modules/CMakeCInformation.cmake /usr/share/cmake-3.28/Modules/CMakeCXXInformation.cmake /usr/share/cmake-3.28/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-3.28/Modules/CMakeGenericSystem.cmake /usr/share/cmake-3.28/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-3.28/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-3.28/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU-C.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU-CXX.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU.cmake /usr/share/cmake-3.28/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-3.28/Modules/FindPackageMessage.cmake /usr/share/cmake-3.28/Modules/FindVulkan.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU-C.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-3.28/Modules/Platform/Linux.cmake /usr/share/cmake-3.28/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.28.3/CMakeCCompiler.cmake CMakeFiles/3.28.3/CMakeCXXCompiler.cmake CMakeFiles/3.28.3/CMakeSystem.cmake: phony
+build /home/mat/VulkanTutorial/CMakeLists.txt /home/mat/VulkanTutorial/build/CMakeFiles/VerifyGlobs.cmake /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3Config.cmake /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3ConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3Targets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/glfw3/glfw3Targets.cmake /usr/share/cmake-3.28/Modules/CMakeCXXInformation.cmake /usr/share/cmake-3.28/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-3.28/Modules/CMakeGenericSystem.cmake /usr/share/cmake-3.28/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-3.28/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-3.28/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU-CXX.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU.cmake /usr/share/cmake-3.28/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-3.28/Modules/FindPackageMessage.cmake /usr/share/cmake-3.28/Modules/FindVulkan.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-3.28/Modules/Platform/Linux.cmake /usr/share/cmake-3.28/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.28.3/CMakeCXXCompiler.cmake CMakeFiles/3.28.3/CMakeSystem.cmake: phony
 
 
 #############################################

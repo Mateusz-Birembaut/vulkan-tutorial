@@ -4,9 +4,9 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE // depth range [0, 1] au lieu de [-1, 1]
 
-#include <include/VulkanApp.h>
+#include <VulkanApp/VulkanApp.h>
 
-#include <include/Core/VulkanContext.h>
+#include <VulkanApp/Core/VulkanContext.h>
 
 #include "FileReader.h"
 #include "Uniforms.h"
@@ -86,28 +86,6 @@ void VulkanApp::framebufferResizeCallback(GLFWwindow* window, int width, int hei
 	app->setResized(true);
 }
 
-bool VulkanApp::checkValidationLayerSupport() {
-	uint32_t layerCount;
-	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-	// on récupère les layer disponible
-	std::vector<VkLayerProperties> availableLayer(layerCount);
-	vkEnumerateInstanceLayerProperties(&layerCount, availableLayer.data());
-
-	for (auto layerName : validationLayers) {
-		bool layerFound = false;
-		for (const auto& layerPropreties : availableLayer) {
-			if (std::strcmp(layerName, layerPropreties.layerName) == 0) {
-				layerFound = true;
-				break;
-			}
-		}
-		if (!layerFound)
-			return false;
-	}
-
-	return true;
-}
 
 void VulkanApp::initVulkan() {
 	/*
@@ -117,8 +95,8 @@ void VulkanApp::initVulkan() {
 	pickPhysicalDevice();
 	createLogicalDevice(); */
 	m_context.init(m_window, true);
-	createSwapChain();
-	createImageViews();
+	// initialize swapchain (creates swapchain and image views)
+	m_swapchain.init(&m_context, m_window);
 	createRenderPass();
 	createDescriptorSetLayout();
 	createGraphicsPipeline();
@@ -139,148 +117,7 @@ void VulkanApp::initVulkan() {
 }
 
 
-bool VulkanApp::checkDeviceExtensionSupport(VkPhysicalDevice device) {
-	uint32_t extensionCount;
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
-	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
-
-	std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-
-	for (const auto& extension : availableExtensions) {
-		requiredExtensions.erase(extension.extensionName);
-	}
-
-	return requiredExtensions.empty();
-}
-
-
-
-VkSurfaceFormatKHR VulkanApp::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
-	// le format de couleur qu'on va utiliser
-
-	for (const auto& availableFormat : availableFormats) {
-		if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-			return availableFormat;
-	}
-	return availableFormats[0]; // si on a pas le srgb non linéaire supporté, on retourne le premier format support
-				    // mais on pourrait rank ceux qu'ils restent et prendre le meilleur par exemple
-}
-
-VkPresentModeKHR VulkanApp::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
-	// le type de queue qu'on va utiliser pour stocker nos images a afficher a l'écran
-	for (const auto& availablePresentMode : availablePresentModes) {
-		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
-			// triple buffering, si le buffer est plein, on remplace les images dans le buffer, compromi, réduit quand meme la latence sans tearing
-			return availablePresentMode;
-	}
-	return VK_PRESENT_MODE_FIFO_KHR; // le seul mode supporté par défaut
-					 // ca attend si le buffer d'images est plein (l'écran trop lent par exemple)
-}
-
-VkExtent2D VulkanApp::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
-	// la résolution des images dans la swap chain
-	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
-		return capabilities.currentExtent;
-	} else {
-		int height;
-		int width;
-		glfwGetFramebufferSize(m_window, &width, &height); // donne la taille en pixel de la fenetre,
-		// on a besoin pour choisir la résolution qui doit etre exprimé en pixels
-
-		VkExtent2D actualExtent{
-		    static_cast<uint32_t>(width),
-		    static_cast<uint32_t>(height),
-		};
-
-		actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-		actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-
-		return actualExtent;
-	}
-}
-
-void VulkanApp::createSwapChain() {
-
-	SwapChainSupportDetails swapChainSupport{m_context.querySwapChainSupport(m_context.getPhysicalDevice())};
-
-	if (swapChainSupport.formats.empty() || swapChainSupport.presentModes.empty()) {
-		throw std::runtime_error("No suitable swap chain formats or present modes found.");
-	}
-
-	VkSurfaceFormatKHR surfaceFormat{chooseSwapSurfaceFormat(swapChainSupport.formats)};
-	VkPresentModeKHR presentMode{chooseSwapPresentMode(swapChainSupport.presentModes)};
-	VkExtent2D extent{chooseSwapExtent(swapChainSupport.capabilities)};
-
-	uint32_t imageCount{swapChainSupport.capabilities.minImageCount + 1}; // nb d'images dans notre swap chain
-
-	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) // = 0 veut dire pas de max
-		imageCount = swapChainSupport.capabilities.maxImageCount;
-
-	VkSwapchainCreateInfoKHR swapChainCreateInfo{};
-	swapChainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	swapChainCreateInfo.surface = m_context.getSurface();
-	swapChainCreateInfo.minImageCount = imageCount;
-	swapChainCreateInfo.imageFormat = surfaceFormat.format;
-	swapChainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
-	swapChainCreateInfo.imageExtent = extent;
-	swapChainCreateInfo.imageArrayLayers = 1;			      // le nombre de couche d'une image quasiment tout le temps 1 sauf si stereoscopic 3D application
-	swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; // le type d'opérations qu'on va utiliser pour nos images
-	// si on veut faire du post process, on va rendre les images dans un image d'abord
-	// alors la on peut utiliser VK_IMAGE_USAGE_TRANSFER_DST_BIT à la place et utiliser une opération mémoire
-	// pour transférer l'image rendue vers une image du swap chain
-
-	QueueFamilyIndices indices = m_context.getQueueFamilies();
-	std::set<uint32_t> uniqueIndices{indices.graphicsFamily.value(), indices.presentFamily.value(), indices.transferFamily.value()};
-
-	std::vector<uint32_t> queueFamilyIndices(uniqueIndices.begin(), uniqueIndices.end());
-	// queue present et transfer peuvent etre les même
-
-	if (indices.graphicsFamily != indices.presentFamily) { // si les deux queues sont séparé
-		swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-		swapChainCreateInfo.queueFamilyIndexCount = queueFamilyIndices.size();
-		swapChainCreateInfo.pQueueFamilyIndices = queueFamilyIndices.data();
-	} else {
-		swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		swapChainCreateInfo.queueFamilyIndexCount = 0;	   // optional
-		swapChainCreateInfo.pQueueFamilyIndices = nullptr; // optional
-	}
-
-	swapChainCreateInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-	// on va pas utiliser de rotation ou flip ou quoi, on précisé alors juste la current transform
-	swapChainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-	// est ce que on a besoin de blend avec d'autres fenetre, pas souvent utilisé
-
-	swapChainCreateInfo.presentMode = presentMode;
-	swapChainCreateInfo.clipped = VK_TRUE;
-	// si clipped, on regarde pas la couleur des pixels caché par une autre fenetre
-
-	swapChainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
-	// utilise quand on resize par exemple, on doit detruire la swapchain
-	// a ce moment la on utilise ça
-
-	if (vkCreateSwapchainKHR(m_context.getDevice(), &swapChainCreateInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create swap chain");
-	}
-
-	vkGetSwapchainImagesKHR(m_context.getDevice(), m_swapChain, &imageCount, nullptr);
-	m_swapChainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(m_context.getDevice(), m_swapChain, &imageCount, m_swapChainImages.data());
-
-	m_swapChainImageFormat = surfaceFormat.format;
-	m_swapChainExtent = extent;
-}
-
-void VulkanApp::createImageViews() {
-	m_swapChainImageViews.resize(m_swapChainImages.size());
-
-	for (size_t i = 0; i < m_swapChainImages.size(); i++) {
-
-		m_swapChainImageViews[i] = createImageView(m_swapChainImages[i], m_swapChainImageFormat, 1, VK_IMAGE_ASPECT_COLOR_BIT);
-	}
-	// std::cout << "all image views created" << std::endl;
-}
 
 void VulkanApp::createDescriptorSetLayout() {
 	// défini quels type de descriptor qui peut etre bound
@@ -370,7 +207,7 @@ void VulkanApp::createGraphicsPipeline() {
 
 	VkRect2D scissor{};
 	scissor.offset = {0, 0};
-	scissor.extent = m_swapChainExtent;
+	scissor.extent = m_swapchain.getExtent();
 	*/
 
 	std::vector<VkDynamicState> dynamicStates{
@@ -540,7 +377,7 @@ VkShaderModule VulkanApp::createShaderModule(const std::vector<char>& code) {
 
 void VulkanApp::createRenderPass() {
 	VkAttachmentDescription colorAttachment{};
-	colorAttachment.format = m_swapChainImageFormat; // devrait etre le meme que notre swapchain
+	colorAttachment.format = m_swapchain.getImageFormat(); // devrait etre le meme que notre swapchain
 	colorAttachment.samples = m_context.getMsaaSamples();	 // pas de multi sampling donc 1 sample
 
 	// comment les couleur / depth data vont etre géré
@@ -591,7 +428,7 @@ void VulkanApp::createRenderPass() {
 	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentDescription colorAttachmentResolve{};
-	colorAttachmentResolve.format = m_swapChainImageFormat;
+	colorAttachmentResolve.format = m_swapchain.getImageFormat();
 	colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
 	colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -649,14 +486,15 @@ void VulkanApp::createRenderPass() {
 }
 
 void VulkanApp::createFrameBuffers() {
-	m_swapChainFrameBuffers.resize(m_swapChainImageViews.size());
+	const auto& swapImageViews = m_swapchain.getImageViews();
+	m_swapChainFrameBuffers.resize(swapImageViews.size());
 
-	for (size_t i{0}; i < m_swapChainImageViews.size(); ++i) {
+	for (size_t i{0}; i < swapImageViews.size(); ++i) {
 
 		std::array<VkImageView, 3> attachments = {
-		    m_colorImageView,
-		    m_depthImageView,
-		    m_swapChainImageViews[i],
+			m_colorImageView,
+			m_depthImageView,
+			swapImageViews[i],
 		};
 
 		VkFramebufferCreateInfo framebufferInfo{};
@@ -664,8 +502,8 @@ void VulkanApp::createFrameBuffers() {
 		framebufferInfo.renderPass = m_renderPass;
 		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 		framebufferInfo.pAttachments = attachments.data();
-		framebufferInfo.width = m_swapChainExtent.width;
-		framebufferInfo.height = m_swapChainExtent.height;
+		framebufferInfo.width = m_swapchain.getExtent().width;
+		framebufferInfo.height = m_swapchain.getExtent().height;
 		framebufferInfo.layers = 1; // nos swapchain images ont 1 seule image
 
 		if (vkCreateFramebuffer(m_context.getDevice(), &framebufferInfo, nullptr, &m_swapChainFrameBuffers[i]) != VK_SUCCESS) {
@@ -900,7 +738,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	// on bind sur quelle swapchainFramebuffer on va écrire (qui est est lui meme relié a une swap chain image)
 
 	renderPassInfo.renderArea.offset = {0, 0};
-	renderPassInfo.renderArea.extent = m_swapChainExtent;
+	renderPassInfo.renderArea.extent = m_swapchain.getExtent();
 	// size of render area, pour de meilleur perfs, ca doit match la render area de l'attachment
 
 	std::array<VkClearValue, 2> clearValues{}; // mtn un tableau, on clear l'image et la profondeur
@@ -937,8 +775,8 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	// si c'est 0,0 à width height alors on écrit dans tout le buffer
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(m_swapChainExtent.width);
-	viewport.height = static_cast<float>(m_swapChainExtent.height);
+	viewport.width = static_cast<float>(m_swapchain.getExtent().width);
+	viewport.height = static_cast<float>(m_swapchain.getExtent().height);
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
@@ -946,7 +784,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	VkRect2D scissor{}; // seuls les pixels dans cette région seront rendu
 	// reste ignoré.
 	scissor.offset = {0, 0};
-	scissor.extent = m_swapChainExtent;
+	scissor.extent = m_swapchain.getExtent();
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	// la command pour draw 1 triangle de 3 index :
@@ -1001,7 +839,7 @@ void VulkanApp::drawFrame() {
 
 	// prendre une image de la swapchain
 	uint32_t imageIndex; // index de la vkimagedans le swap chain images
-	VkResult result = vkAcquireNextImageKHR(m_context.getDevice(), m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(m_context.getDevice(), m_swapchain.getSwapChain(), UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
 	// m_imageAvailableSemaphore signaled quand on a fini
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -1061,7 +899,7 @@ void VulkanApp::drawFrame() {
 	// quels semaphores on va attendre avant de presenter l'image
 	// tant que l'image n'est pas rendu, on att
 
-	VkSwapchainKHR swapChains[] = {m_swapChain};
+	VkSwapchainKHR swapChains[] = {m_swapchain.getSwapChain()};
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 
@@ -1094,9 +932,6 @@ void VulkanApp::cleanupSwapChain() {
 	for (auto frameBuffer : m_swapChainFrameBuffers) {
 		vkDestroyFramebuffer(m_context.getDevice(), frameBuffer, nullptr);
 	}
-	for (auto imageView : m_swapChainImageViews) {
-		vkDestroyImageView(m_context.getDevice(), imageView, nullptr);
-	}
 
 	vkDestroyImageView(m_context.getDevice(), m_colorImageView, nullptr);
 	vkDestroyImage(m_context.getDevice(), m_colorImage, nullptr);
@@ -1106,7 +941,8 @@ void VulkanApp::cleanupSwapChain() {
 	vkDestroyImage(m_context.getDevice(), m_depthImage, nullptr);
 	vkFreeMemory(m_context.getDevice(), m_depthImageMemory, nullptr);
 
-	vkDestroySwapchainKHR(m_context.getDevice(), m_swapChain, nullptr);
+	m_swapchain.cleanup();
+
 }
 
 void VulkanApp::recreateSwapChain() {
@@ -1122,10 +958,8 @@ void VulkanApp::recreateSwapChain() {
 
 	vkDeviceWaitIdle(m_context.getDevice());
 
-	cleanupSwapChain();
+	m_swapchain.recreate(m_window);
 
-	createSwapChain();
-	createImageViews();
 	// les images views doivent etre recrée car sont lies au dimensions des images de la swapchain
 	createColorRessources();
 	createDepthResources();
@@ -1184,7 +1018,7 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage) {
 	ubo.view = m_camera.getViewMatrix();
 	// caméra en hauter et qui regarde en 0,0,0, up de la camera en 0,0,1
 
-	ubo.proj = glm::perspective(glm::radians(45.0f), m_swapChainExtent.width / static_cast<float>(m_swapChainExtent.height), 0.1f, 10.0f);
+	ubo.proj = glm::perspective(glm::radians(45.0f), m_swapchain.getExtent().width / static_cast<float>(m_swapchain.getExtent().height), 0.1f, 10.0f);
 	// camera d'un fov de 45, avec la taille = a celle de nos images et un near plan à 0.1F et far a 10.0f
 
 	ubo.proj[1][1] *= -1; // car glm pour OpenGL et l'axe y est inversé par rapport a vulkan
@@ -1610,7 +1444,7 @@ void VulkanApp::createDepthResources() {
 
 	VkFormat depthFormat = findDepthFormat();
 
-	createImage(m_swapChainExtent.width, m_swapChainExtent.height, depthFormat, 1, m_context.getMsaaSamples(),
+	createImage(m_swapchain.getExtent().width, m_swapchain.getExtent().height , depthFormat, 1, m_context.getMsaaSamples(),
 		    VK_SHARING_MODE_EXCLUSIVE,
 		    VK_IMAGE_TILING_OPTIMAL,
 		    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -1742,9 +1576,9 @@ VkSampleCountFlagBits VulkanApp::getMaxMsaa() {
 }
 
 void VulkanApp::createColorRessources() {
-	VkFormat colorFormat = m_swapChainImageFormat;
+	VkFormat colorFormat = m_swapchain.getImageFormat();
 
-	createImage(m_swapChainExtent.width, m_swapChainExtent.height, colorFormat, 1, m_context.getMsaaSamples(),
+	createImage(m_swapchain.getExtent().width, m_swapchain.getExtent().height, colorFormat, 1, m_context.getMsaaSamples(),
 		    VK_SHARING_MODE_EXCLUSIVE, VK_IMAGE_TILING_OPTIMAL,
 		    VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
 		    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_colorImage, m_colorImageMemory);

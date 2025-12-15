@@ -1,7 +1,10 @@
 #ifndef VULKAN_APP_H
 #define VULKAN_APP_H
 
+
+#include <include/Core/VulkanContext.h>
 #include "Mesh.h"
+#include "Camera.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -23,13 +26,6 @@ const std::string g_texture_path = "Textures/viking_room.png";
 const std::string g_vertex_shader = "Shaders/vert.spv";
 const std::string g_fragment_shader = "Shaders/frag.spv";
 
-const std::vector<const char*> validationLayers{
-    "VK_LAYER_KHRONOS_validation",
-};
-
-const std::vector<const char*> deviceExtensions{
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-};
 
 #ifdef NDEBUG
 constexpr bool enableValidationLayers = false;
@@ -37,21 +33,6 @@ constexpr bool enableValidationLayers = false;
 constexpr bool enableValidationLayers = true;
 #endif // NDEBUG
 
-struct QueueFamilyIndices {
-	std::optional<uint32_t> graphicsFamily; // on peut voir si on a une graphics queue, pour certaines queue on est pas obligé de l'avoir forcément
-	std::optional<uint32_t> presentFamily;	// see if we can present images to the surface
-	std::optional<uint32_t> transferFamily;
-
-	bool isComplete() {
-		return graphicsFamily.has_value() && presentFamily.has_value() && transferFamily.has_value();
-	}
-};
-
-struct SwapChainSupportDetails {
-	VkSurfaceCapabilitiesKHR capabilities;
-	std::vector<VkSurfaceFormatKHR> formats;
-	std::vector<VkPresentModeKHR> presentModes;
-};
 
 class VulkanApp {
       public:
@@ -67,14 +48,17 @@ class VulkanApp {
 	}
 
       private:
+
+		VulkanContext m_context;
+
 	void initWindow();
 
 	void initVulkan();
-	void createInstance();
+/* 	void createInstance(); //
 	void setupDebugMessenger();
-	void createSurface();
-	void pickPhysicalDevice();
-	void createLogicalDevice();
+	void createSurface(); //
+	void pickPhysicalDevice(); //
+	void createLogicalDevice(); //  */
 	void createSwapChain();
 	void createImageViews();
 	void createRenderPass();
@@ -134,8 +118,10 @@ class VulkanApp {
 	bool hasStencilComponent(VkFormat format);
 	VkFormat findDepthFormat();
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+	
+	//QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+	//SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
@@ -147,15 +133,6 @@ class VulkanApp {
 	void generateMipmaps(VkCommandPool commandPool, VkQueue queue, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
 	GLFWwindow* m_window;
-
-	VkInstance m_instance;
-	VkSurfaceKHR m_surface;
-	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
-	VkDevice m_device;
-
-	VkQueue m_graphicsQueue;
-	VkQueue m_presentQueue;
-	VkQueue m_transferQueue;
 
 	VkSwapchainKHR m_swapChain;
 	std::vector<VkImage> m_swapChainImages;
@@ -217,14 +194,29 @@ class VulkanApp {
 	VkSampleCountFlagBits m_msaaSamples;
 	VkSampleCountFlagBits getMaxMsaa();
 
+	Camera m_camera{};
+
+	// frame timing for smooth movement
+	float m_deltaTime{0.0f};
+	double m_lastFrame{0.0};
+
+	// input processing (polling each frame)
+	void processInput(float dt);
+
+	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+	void onKey(int key, int scancode, int action, int mods);
 
 	// DEBUG
+	/*
 	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-	void setObjectName(VkBuffer buffer, const char* name);
+
 	std::vector<const char*> getRequiredExtensions();
 	VkDebugUtilsMessengerEXT m_debugMessenger;
+	*/
+
+	void setObjectName(VkBuffer buffer, const char* name);
 };
 
 #endif // VULKAN_APP_H

@@ -1,0 +1,1 @@
+/usr/bin/c++ -g CMakeFiles/VulkanTutorial.dir/src/main.cpp.o CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o -o VulkanTutorial  /usr/lib/x86_64-linux-gnu/libvulkan.so /usr/lib/x86_64-linux-gnu/libglfw.so.3.3 

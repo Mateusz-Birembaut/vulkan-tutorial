@@ -1,0 +1,32 @@
+[
+{
+  "directory": "/home/mat/VulkanTutorial/build",
+  "command": "/usr/bin/g++ -I/home/mat/VulkanTutorial -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial/include -g -std=gnu++17 -o CMakeFiles/VulkanTutorial.dir/src/main.cpp.o -c /home/mat/VulkanTutorial/src/main.cpp",
+  "file": "/home/mat/VulkanTutorial/src/main.cpp",
+  "output": "CMakeFiles/VulkanTutorial.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/mat/VulkanTutorial/build",
+  "command": "/usr/bin/g++ -I/home/mat/VulkanTutorial -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial/include -g -std=gnu++17 -o CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o -c /home/mat/VulkanTutorial/src/VulkanApp.cpp",
+  "file": "/home/mat/VulkanTutorial/src/VulkanApp.cpp",
+  "output": "CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o"
+},
+{
+  "directory": "/home/mat/VulkanTutorial/build",
+  "command": "/usr/bin/g++ -I/home/mat/VulkanTutorial -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial/include -g -std=gnu++17 -o CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o -c /home/mat/VulkanTutorial/src/Core/VulkanContext.cpp",
+  "file": "/home/mat/VulkanTutorial/src/Core/VulkanContext.cpp",
+  "output": "CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o"
+},
+{
+  "directory": "/home/mat/VulkanTutorial/build",
+  "command": "/usr/bin/g++ -I/home/mat/VulkanTutorial -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial/include -g -std=gnu++17 -o CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o -c /home/mat/VulkanTutorial/src/Core/VulkanDebug.cpp",
+  "file": "/home/mat/VulkanTutorial/src/Core/VulkanDebug.cpp",
+  "output": "CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o"
+},
+{
+  "directory": "/home/mat/VulkanTutorial/build",
+  "command": "/usr/bin/g++ -I/home/mat/VulkanTutorial -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial/include -g -std=gnu++17 -o CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o -c /home/mat/VulkanTutorial/tiny_obj_loader.cc",
+  "file": "/home/mat/VulkanTutorial/tiny_obj_loader.cc",
+  "output": "CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o"
+}
+]

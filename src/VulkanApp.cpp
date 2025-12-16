@@ -97,11 +97,11 @@ void VulkanApp::initVulkan() {
 	m_context.init(m_window, true);
 	// initialize swapchain (creates swapchain and image views)
 	m_swapchain.init(&m_context, m_window);
-	createRenderPass();
+	m_renderPass.init(&m_context, &m_swapchain);
 	createDescriptorSetLayout();
 	//createGraphicsPipeline();
 
-	m_pipeline.init(&m_context, m_renderPass, m_descriptorSetLayout);
+	m_pipeline.init(&m_context, m_renderPass.get(), m_descriptorSetLayout);
 
 	createCommandPools();
 	createColorRessources();
@@ -153,117 +153,6 @@ void VulkanApp::createDescriptorSetLayout() {
 	}
 }
 
-
-void VulkanApp::createRenderPass() {
-	VkAttachmentDescription colorAttachment{};
-	colorAttachment.format = m_swapchain.getImageFormat(); // devrait etre le meme que notre swapchain
-	colorAttachment.samples = m_context.getMsaaSamples();	 // pas de multi sampling donc 1 sample
-
-	// comment les couleur / depth data vont etre géré
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	// VK_ATTACHMENT_LOAD_OP_CLEAR, on va clear le framebuffer avant d'écrire dedans
-	// VK_ATTACHMENT_LOAD_OP_LOAD, garde les valeurs dans le framebuffer, si on veut accumuler par exemple
-	// VK_ATTACHMENT_LOAD_OP_DONT_CARE, le svaleurs sont undefined on s'en fou d'elles
-
-	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	// VK_ATTACHMENT_STORE_OP_STORE, les elements rendu sont stocké dans la mémoire et lu apres
-	// par exemple affiché sur l'écran, utilisé dans une autre pass
-	// VK_ATTACHMENT_STORE_OP_DONT_CARE, le contenu est undifined
-	// depth buffer ca garde que les fragment visible et les valeurs
-	// de profondeur on pas besoin d'être stocké
-
-	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // meme chose qu'en haut mais pour les stencil data
-	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-	// les textures et framebuffers sont des VkImage avec un certain format
-	// mais le layout des pixels en mémoire peut etre modifé en fonction de ce qu'on veut faire
-	// VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, images utilisé comme color attachment
-	// VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, images qui vont allé dans la swap chain
-	// VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, images qui vont etre utilisé dans une opération mémoire de copie
-
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // ce qu'il y aura avant le début de la render pass
-	// on ne s'interresse pas au layout de la dernière image, les donnees sont pas forcément gardé
-	// mais de toutes facon on clear avant d'écrire donc pas grave
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	// indique que l'image sera utilisée pour être présentée à l'écran via la swapchain après la fin de la render pass.
-
-	VkAttachmentReference colorAttachmentRef{};
-	colorAttachmentRef.attachment = 0; // index dans l'array des attachmentDescription
-	// le notre c'est un seul VkAttachmentDescription donc 0
-	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentDescription depthAttachment{};
-	depthAttachment.format = findDepthFormat(); // doit etre le meme format que l'image
-	depthAttachment.samples = m_context.getMsaaSamples();
-	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // on stocke pas car une fois draw on va pas le réutiliser, permet optimisations
-	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentReference depthAttachmentRef{};
-	depthAttachmentRef.attachment = 1;
-	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentDescription colorAttachmentResolve{};
-	colorAttachmentResolve.format = m_swapchain.getImageFormat();
-	colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
-	colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-	VkAttachmentReference colorAttachmentResolveRef{};
-	colorAttachmentResolveRef.attachment = 2;
-	colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkSubpassDescription subpass{};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	// peut etre un passe de compute donc on précise que c'est une de graphisme
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorAttachmentRef;
-	subpass.pDepthStencilAttachment = &depthAttachmentRef;
-	subpass.pResolveAttachments = &colorAttachmentResolveRef;
-	// subpass.pPreserveAttachments, données qui doivent etre gardé
-
-	VkSubpassDependency dependency{};
-	dependency.srcSubpass = VK_SUBPASS_EXTERNAL; // c'est la pass implicit avec la render pass
-	dependency.dstSubpass = 0;		     // 0 c'est notre render pass
-
-	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT; // quoi attendre
-	// on doit wait que la swap chain finisse de lire l'image avant qu'on y accède
-	// pour ça, on attend au niveau de la color attachment stage
-	// mtn on attend aussi que le depth buffer test
-
-	dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT; // a quel stage ca arrive
-
-	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-	// les opérations doivent attendre qu'on soit dans le stage color attachment
-	// le rendu des pixels dans le framebuffer ne commence pas tant
-	// qu'on est pas dans l'état ecriture en gros
-
-	std::array<VkAttachmentDescription, 3> attachments = {colorAttachment, depthAttachment, colorAttachmentResolve};
-
-	VkRenderPassCreateInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-	renderPassInfo.pAttachments = attachments.data();
-	renderPassInfo.subpassCount = 1;
-	renderPassInfo.pSubpasses = &subpass;
-	renderPassInfo.dependencyCount = 1;
-	renderPassInfo.pDependencies = &dependency;
-
-	if (vkCreateRenderPass(m_context.getDevice(), &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create render pass!");
-	} else {
-		std::cout << "Render pass created" << '\n';
-	}
-}
-
 void VulkanApp::createFrameBuffers() {
 	const auto& swapImageViews = m_swapchain.getImageViews();
 	m_swapChainFrameBuffers.resize(swapImageViews.size());
@@ -278,7 +167,7 @@ void VulkanApp::createFrameBuffers() {
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = m_renderPass;
+		framebufferInfo.renderPass = m_renderPass.get();
 		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 		framebufferInfo.pAttachments = attachments.data();
 		framebufferInfo.width = m_swapchain.getExtent().width;
@@ -512,7 +401,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = m_renderPass;
+	renderPassInfo.renderPass = m_renderPass.get();
 	renderPassInfo.framebuffer = m_swapChainFrameBuffers[imageIndex];
 	// on bind sur quelle swapchainFramebuffer on va écrire (qui est est lui meme relié a une swap chain image)
 
@@ -777,7 +666,7 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 
 	m_pipeline.cleanup();
 
-	vkDestroyRenderPass(m_context.getDevice(), m_renderPass, nullptr);
+	m_renderPass.cleanup();
 
 	m_context.cleanup();
 
@@ -1193,28 +1082,8 @@ void VulkanApp::createTextureImageSampler() {
 	}
 }
 
-VkFormat VulkanApp::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
 
-	for (VkFormat format : candidates) {
-		VkFormatProperties props;
-		vkGetPhysicalDeviceFormatProperties(m_context.getPhysicalDevice(), format, &props);
 
-		if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.linearTilingFeatures & features) == features) {
-			return format;
-		} else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
-			return format;
-		}
-	}
-
-	throw std::runtime_error("failed to find supported format");
-}
-
-VkFormat VulkanApp::findDepthFormat() {
-	return findSupportedFormat(
-	    {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
-	    VK_IMAGE_TILING_OPTIMAL,
-	    VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-}
 
 bool VulkanApp::hasStencilComponent(VkFormat format) {
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
@@ -1222,7 +1091,7 @@ bool VulkanApp::hasStencilComponent(VkFormat format) {
 
 void VulkanApp::createDepthResources() {
 
-	VkFormat depthFormat = findDepthFormat();
+	VkFormat depthFormat = m_renderPass.findDepthFormat();
 
 	createImage(m_swapchain.getExtent().width, m_swapchain.getExtent().height , depthFormat, 1, m_context.getMsaaSamples(),
 		    VK_SHARING_MODE_EXCLUSIVE,

@@ -25,6 +25,12 @@
 },
 {
   "directory": "/home/mat/VulkanTutorial/build",
+  "command": "/usr/bin/g++ -I/home/mat/VulkanTutorial/include -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial -g -std=gnu++17 -o CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.o -c /home/mat/VulkanTutorial/src/Rendering/RenderPass.cpp",
+  "file": "/home/mat/VulkanTutorial/src/Rendering/RenderPass.cpp",
+  "output": "CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.o"
+},
+{
+  "directory": "/home/mat/VulkanTutorial/build",
   "command": "/usr/bin/g++ -I/home/mat/VulkanTutorial/include -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial -g -std=gnu++17 -o CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o -c /home/mat/VulkanTutorial/src/VulkanApp.cpp",
   "file": "/home/mat/VulkanTutorial/src/VulkanApp.cpp",
   "output": "CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o"

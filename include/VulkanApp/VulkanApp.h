@@ -6,6 +6,8 @@
 #include <VulkanApp/Core/SwapChain.h>
 
 #include <VulkanApp/Rendering/Pipeline.h>
+#include <VulkanApp/Rendering/RenderPass.h>
+
 #include <VulkanApp/Resources/Mesh.h>
 
 #include "Camera.h"
@@ -59,11 +61,12 @@ class VulkanApp {
 		VulkanContext m_context;
 		SwapChain m_swapchain;
 		Pipeline m_pipeline;
+		RenderPass m_renderPass;
 
 	void initWindow();
 
 	void initVulkan();
-	void createRenderPass();
+	//void createRenderPass();
 	void createDescriptorSetLayout();
 	//void createGraphicsPipeline();
 	void createFrameBuffers();
@@ -133,7 +136,7 @@ class VulkanApp {
 
 
 
-	VkRenderPass m_renderPass;
+	
 	VkDescriptorSetLayout m_descriptorSetLayout;
 /* 	VkPipelineLayout m_pipelineLayout;
 	VkPipeline m_graphicsPipeline; */

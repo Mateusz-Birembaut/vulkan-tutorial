@@ -1,4 +1,4 @@
-#include <VulkanApp/Core/VulkanDebug.h>
+#include <VulkanApp/Debug/VulkanDebug.h>
 
 #include <GLFW/glfw3.h>
 

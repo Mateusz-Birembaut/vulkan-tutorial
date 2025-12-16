@@ -8,7 +8,7 @@
 
 #include <VulkanApp/Core/VulkanContext.h>
 
-#include "FileReader.h"
+
 #include "Uniforms.h"
 #include "Utility.h"
 #include "Vertex.h"
@@ -99,7 +99,10 @@ void VulkanApp::initVulkan() {
 	m_swapchain.init(&m_context, m_window);
 	createRenderPass();
 	createDescriptorSetLayout();
-	createGraphicsPipeline();
+	//createGraphicsPipeline();
+
+	m_pipeline.init(&m_context, m_renderPass, m_descriptorSetLayout);
+
 	createCommandPools();
 	createColorRessources();
 	createDepthResources();
@@ -150,230 +153,6 @@ void VulkanApp::createDescriptorSetLayout() {
 	}
 }
 
-void VulkanApp::createGraphicsPipeline() {
-	auto vertShaderCode{FileReader::readSPV(g_vertex_shader)};
-	auto fragShaderCode{FileReader::readSPV(g_fragment_shader)};
-
-	VkShaderModule vertShaderModule{createShaderModule(vertShaderCode)};
-	VkShaderModule fragShaderModule{createShaderModule(fragShaderCode)};
-
-	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT; // a quel endroit on va utiliser ce shader
-	// y'a un opetion pour chaque étape de la pipeline graphique vertex shader, tesselation, geom shader ect..
-
-	vertShaderStageInfo.module = vertShaderModule;
-	vertShaderStageInfo.pName = "main";
-	// ici vulkan va éxécuter le code dans main du vertexShader
-	// on peut "combiner" des shaders dans 1 module mais pas le cas ici
-
-	// vertShaderStageInfo.pSpecializationInfo permet de définir des constantes,
-	//  le compilateur pourra alors mieux les optimiser plutot que d'utiliser des valeur runtime
-
-	VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	fragShaderStageInfo.module = fragShaderModule;
-	fragShaderStageInfo.pName = "main";
-
-	VkPipelineShaderStageCreateInfo shaderStages[]{vertShaderStageInfo, fragShaderStageInfo};
-
-	auto bindingDescription = Vertex::getBindingDescription();
-	auto attributeDescriptions = Vertex::getAttributeDescriptions();
-
-	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 1;
-	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-	// equivalent en opengl : bind
-	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-	;
-	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-	// equivalent opengl : comment sont organisé les données
-
-	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	inputAssembly.primitiveRestartEnable = VK_FALSE;
-	// donne comment on va afficher comme opengl, points, triangle strip ect.
-	// primitiveRestartEnable = on veut réutiliser des points avec un index buffer
-	// 0xFFFF ou 0xFFFFFFFF pour dire qu'on termine une triangle strip par exemple
-
-	/*
-	si pas dynamic
-	VkViewport viewPort{};
-	viewPort.x = 0.0f;
-	...
-
-	VkRect2D scissor{};
-	scissor.offset = {0, 0};
-	scissor.extent = m_swapchain.getExtent();
-	*/
-
-	std::vector<VkDynamicState> dynamicStates{
-	    VK_DYNAMIC_STATE_VIEWPORT,
-	    VK_DYNAMIC_STATE_SCISSOR,
-	}; // permet de modifier dans le command buffer le scissor ou viewport
-
-	VkPipelineDynamicStateCreateInfo dynamicState{};
-	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-	dynamicState.pDynamicStates = dynamicStates.data();
-
-	VkPipelineViewportStateCreateInfo viewportInfo{};
-	viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	viewportInfo.scissorCount = 1;
-	viewportInfo.viewportCount = 1;
-
-	// rasterizer fais le depth testing, face culling, scissor test, et wireframe ou pas
-	VkPipelineRasterizationStateCreateInfo rasterizer{};
-	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	rasterizer.depthClampEnable = VK_FALSE;
-	// si true, les fragment en dehors du near et far plane sont clamped au lieu d'être ignoré
-
-	rasterizer.rasterizerDiscardEnable = VK_FALSE; // si true, on skip le rasterizer
-	// et on peut pas output dans le framebuffer
-
-	rasterizer.polygonMode = VK_POLYGON_MODE_FILL; // en gros c'est le mode classique
-	// ici qu'on met le wireFrame ou point pour chaque pts
-	// il faut activer une gpu feature si on veut une des autres options
-
-	rasterizer.lineWidth = 1.0f; // si on veut plus de 1, on doit aussi activer une gpu feature "widelines"
-
-	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;		// on cull classiquement
-	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE; // en Vulkan, avec viewport non inversé, l'enroulement visuel CCW devient CW
-
-	rasterizer.depthBiasEnable = VK_FALSE;
-	rasterizer.depthBiasConstantFactor = 0.0f; // Optional
-	rasterizer.depthBiasClamp = 0.0f;	   // Optional
-	rasterizer.depthBiasSlopeFactor = 0.0f;	   // Optional
-	// permet de modif la depth value en ajouter des constants ou quoi
-	// utilisé pour du shadow mapping
-
-	// multiSampling, forme d'anti aliasing, la combinaison des couleurs de fragment d'un seul pixel
-	// c'est pas utilisé si pour un fragment on a qu'une couleur
-	// donc c'est efficace
-
-	VkPipelineMultisampleStateCreateInfo multisampling{}; // pour l'instant désactivé
-	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisampling.sampleShadingEnable = VK_TRUE;
-	multisampling.rasterizationSamples = m_context.getMsaaSamples();
-	multisampling.minSampleShading = 0.2f;
-
-	// depth / stencil testing
-	// si on l'utilise on fait un VkPipelineDepthStencilStateCreateInfo
-	// sinon nullptr
-	// on verra apres
-
-	// color blending
-	// dernière étape avant framebuffer
-	// deux modes soit
-	// VkPipelineColorBlendAttachmentState contains the configuration per attached framebuffer and the second struct
-	// VkPipelineColorBlendStateCreateInfo contains the global color blending settings
-
-	VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	colorBlendAttachment.blendEnable = VK_FALSE; // on blend pas
-	// notre nouvelle image ne sera pas combiné avec l'ancienne
-	// le plus commun c'est de blend en utilisant l'alpha channel
-
-	VkPipelineColorBlendStateCreateInfo colorBlending{};
-	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	colorBlending.logicOpEnable = VK_FALSE;
-	colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional, permet de blend avec des opération sur les bits
-	// ca désactivera la première méthode avec l'attachment, comme si on avait blendEnable = VK_FALSE;
-	// pour chaque framebuffer, la on fera pas de blend
-	colorBlending.attachmentCount = 1;
-	colorBlending.pAttachments = &colorBlendAttachment;
-	colorBlending.blendConstants[0] = 0.0f; // Optional
-	colorBlending.blendConstants[1] = 0.0f; // Optional
-	colorBlending.blendConstants[2] = 0.0f; // Optional
-	colorBlending.blendConstants[3] = 0.0f; // Optional
-
-	// pipeline layout
-	// uniforms spécifié ici
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 1;
-	pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;
-	pipelineLayoutInfo.pushConstantRangeCount = 0;	  // Optional
-	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
-	// la on peut passer des variables dynamic a nos shader
-	// par exemple utime je crois
-
-	if (vkCreatePipelineLayout(m_context.getDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create pipeline layout!");
-	} else {
-		std::cout << "Pipeline layout created" << '\n';
-	}
-
-	VkPipelineDepthStencilStateCreateInfo depthStencilInfo{};
-	depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	depthStencilInfo.depthTestEnable = VK_TRUE;
-	depthStencilInfo.depthWriteEnable = VK_TRUE; // si on passe de depth test on écrit la couleur
-	depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS;
-	depthStencilInfo.depthBoundsTestEnable = VK_FALSE; // permet de garder les fragments qui tombe dans une certaine range de depth
-	depthStencilInfo.minDepthBounds = 0.0f;		   // optional
-	depthStencilInfo.maxDepthBounds = 1.0f;		   // optional
-	depthStencilInfo.stencilTestEnable = VK_FALSE;
-	depthStencilInfo.front = {}; // optional
-	depthStencilInfo.back = {};  // optional
-
-	VkGraphicsPipelineCreateInfo pipelineInfo{};
-	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineInfo.stageCount = 2; // nb elements dans shaderStages
-	pipelineInfo.pStages = shaderStages;
-
-	pipelineInfo.pVertexInputState = &vertexInputInfo;
-	pipelineInfo.pInputAssemblyState = &inputAssembly;
-	pipelineInfo.pViewportState = &viewportInfo;
-	pipelineInfo.pRasterizationState = &rasterizer;
-	pipelineInfo.pMultisampleState = &multisampling;
-	pipelineInfo.pDepthStencilState = nullptr; // Optional
-	pipelineInfo.pColorBlendState = &colorBlending;
-	pipelineInfo.pDynamicState = &dynamicState;
-	pipelineInfo.pDepthStencilState = &depthStencilInfo;
-
-	pipelineInfo.layout = m_pipelineLayout;
-
-	pipelineInfo.renderPass = m_renderPass;
-	pipelineInfo.subpass = 0; // index de la subpass
-
-	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
-	pipelineInfo.basePipelineIndex = -1;		  // Optional
-	// permet de créer des pipelines depuis d'autres pipelines
-	// moins couteux quand fonctionnalité en commnun
-	// et switch entre 2 pipeline qui ont le meme parent est plus rapide aussi
-
-	if (vkCreateGraphicsPipelines(m_context.getDevice(), VK_NULL_HANDLE, 1,
-				      &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS)
-	// ca prend plus de param car on peut créer plusieurs pipeline avec 1 call
-	// 2eme param est un cache pour reutiliser des données utile a la création de pipeline
-	// permet de speed up la creation
-	{
-		throw std::runtime_error("failed to create graphics pipeline!");
-	} else {
-		std::cout << "Graphics pipeline created" << '\n';
-	}
-
-	vkDestroyShaderModule(m_context.getDevice(), vertShaderModule, nullptr);
-	vkDestroyShaderModule(m_context.getDevice(), fragShaderModule, nullptr);
-}
-
-VkShaderModule VulkanApp::createShaderModule(const std::vector<char>& code) {
-	VkShaderModuleCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize = code.size();
-	createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
-	// vector gère le pire d'alignement donc c'est bon
-
-	VkShaderModule shaderModule;
-	if (vkCreateShaderModule(m_context.getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create shader module!");
-	}
-
-	return shaderModule;
-}
 
 void VulkanApp::createRenderPass() {
 	VkAttachmentDescription colorAttachment{};
@@ -759,7 +538,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	// VK_SUBPASS_CONTENTS_INLINE, on met les commandes dans le primary command buffer, pas de secondaire utilisé
 	// VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS, éxécuté depuis le secondaire
 
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline.get());
 	// VK_PIPELINE_BIND_POINT_GRAPHICS, c'est une pipeline de rendu
 
 	VkBuffer vertexBuffers[]{m_meshBuffer};
@@ -794,7 +573,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 
 	vkCmdBindDescriptorSets(commandBuffer,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
-				m_pipelineLayout,
+				m_pipeline.getLayout(),
 				0, 1, &m_descriptorSets[m_currentFrame], 0, nullptr);
 
 	// utilisation de l'index buffer mtn
@@ -995,8 +774,9 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 	}
 	vkDestroyCommandPool(m_context.getDevice(), m_commandPoolTransfer, nullptr);
 	vkDestroyCommandPool(m_context.getDevice(), m_commandPool, nullptr);
-	vkDestroyPipeline(m_context.getDevice(), m_graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(m_context.getDevice(), m_pipelineLayout, nullptr);
+
+	m_pipeline.cleanup();
+
 	vkDestroyRenderPass(m_context.getDevice(), m_renderPass, nullptr);
 
 	m_context.cleanup();

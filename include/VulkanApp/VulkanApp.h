@@ -5,7 +5,9 @@
 #include <VulkanApp/Core/VulkanContext.h>
 #include <VulkanApp/Core/SwapChain.h>
 
-#include "Mesh.h"
+#include <VulkanApp/Rendering/Pipeline.h>
+#include <VulkanApp/Resources/Mesh.h>
+
 #include "Camera.h"
 
 #define GLFW_INCLUDE_VULKAN
@@ -25,8 +27,8 @@ constexpr int g_max_frames_in_flight{2};
 const std::string g_model_path = "Models/viking_room.obj";
 const std::string g_texture_path = "Textures/viking_room.png";
 
-const std::string g_vertex_shader = "Shaders/vert.spv";
-const std::string g_fragment_shader = "Shaders/frag.spv";
+/* const std::string g_vertex_shader = "Shaders/vert.spv";
+const std::string g_fragment_shader = "Shaders/frag.spv"; */
 
 
 #ifdef NDEBUG
@@ -56,20 +58,14 @@ class VulkanApp {
 
 		VulkanContext m_context;
 		SwapChain m_swapchain;
+		Pipeline m_pipeline;
 
 	void initWindow();
 
 	void initVulkan();
-/* 	void createInstance(); //
-	void setupDebugMessenger();
-	void createSurface(); //
-	void pickPhysicalDevice(); //
-	void createLogicalDevice(); //  */
-/* 	void createSwapChain();
-	void createImageViews(); */
 	void createRenderPass();
 	void createDescriptorSetLayout();
-	void createGraphicsPipeline();
+	//void createGraphicsPipeline();
 	void createFrameBuffers();
 	void createCommandPools();
 	void createColorRessources();
@@ -128,7 +124,7 @@ class VulkanApp {
 
 
 
-	VkShaderModule createShaderModule(const std::vector<char>& code);
+	//VkShaderModule createShaderModule(const std::vector<char>& code);
 
 	VkImageView createImageView(VkImage image, VkFormat format, uint32_t mipLevels, VkImageAspectFlags aspectFlags);
 
@@ -139,8 +135,8 @@ class VulkanApp {
 
 	VkRenderPass m_renderPass;
 	VkDescriptorSetLayout m_descriptorSetLayout;
-	VkPipelineLayout m_pipelineLayout;
-	VkPipeline m_graphicsPipeline;
+/* 	VkPipelineLayout m_pipelineLayout;
+	VkPipeline m_graphicsPipeline; */
 
 	VkCommandPool m_commandPool;
 	VkCommandPool m_commandPoolTransfer;
@@ -205,15 +201,6 @@ class VulkanApp {
 	void onKey(int key, int scancode, int action, int mods);
 
 	// DEBUG
-	/*
-	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
-	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
-	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-
-	std::vector<const char*> getRequiredExtensions();
-	VkDebugUtilsMessengerEXT m_debugMessenger;
-	*/
-
 	void setObjectName(VkBuffer buffer, const char* name);
 };
 

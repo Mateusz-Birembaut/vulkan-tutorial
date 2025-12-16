@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include <VulkanApp/Core/VulkanDebug.h>
+#include <VulkanApp/Debug/VulkanDebug.h>
 
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>

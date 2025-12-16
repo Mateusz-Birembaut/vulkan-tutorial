@@ -1,5 +1,4 @@
-#ifndef FILE_READER_H
-#define FILE_READER_H
+#pragma once
 
 #include <fstream>
 #include <iostream>
@@ -25,5 +24,3 @@ namespace FileReader {
 		return buffer;
 	}
 } // namespace FileReader
-
-#endif // FILE_READER_H

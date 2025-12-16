@@ -69,7 +69,7 @@ class VulkanApp {
 	//void createRenderPass();
 	void createDescriptorSetLayout();
 	//void createGraphicsPipeline();
-	void createFrameBuffers();
+	//void createFrameBuffers();
 	void createCommandPools();
 	void createColorRessources();
 	void createDepthResources();
@@ -168,8 +168,7 @@ class VulkanApp {
 	VkDescriptorPool m_descriptorPool;
 	std::vector<VkDescriptorSet> m_descriptorSets;
 
-	std::vector<VkImageView> m_swapChainImageViews;
-	std::vector<VkFramebuffer> m_swapChainFrameBuffers;
+	//std::vector<VkFramebuffer> m_swapChainFrameBuffers;
 
 	std::vector<VkCommandBuffer> m_commandBuffers;
 

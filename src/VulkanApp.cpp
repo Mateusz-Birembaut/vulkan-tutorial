@@ -106,10 +106,14 @@ void VulkanApp::initVulkan() {
 	createCommandPools();
 	createColorRessources();
 	createDepthResources();
-	createFrameBuffers();
+	//createFrameBuffers();
 	createTextureImage();
 	createTextureImageView();
 	createTextureImageSampler();
+
+    m_swapchain.createFrameBuffers(m_renderPass.get(), m_depthImageView, m_colorImageView);
+    
+
 	loadMesh();
 	createMeshBuffer();
 	createUniformBuffer();
@@ -153,34 +157,7 @@ void VulkanApp::createDescriptorSetLayout() {
 	}
 }
 
-void VulkanApp::createFrameBuffers() {
-	const auto& swapImageViews = m_swapchain.getImageViews();
-	m_swapChainFrameBuffers.resize(swapImageViews.size());
 
-	for (size_t i{0}; i < swapImageViews.size(); ++i) {
-
-		std::array<VkImageView, 3> attachments = {
-			m_colorImageView,
-			m_depthImageView,
-			swapImageViews[i],
-		};
-
-		VkFramebufferCreateInfo framebufferInfo{};
-		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = m_renderPass.get();
-		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-		framebufferInfo.pAttachments = attachments.data();
-		framebufferInfo.width = m_swapchain.getExtent().width;
-		framebufferInfo.height = m_swapchain.getExtent().height;
-		framebufferInfo.layers = 1; // nos swapchain images ont 1 seule image
-
-		if (vkCreateFramebuffer(m_context.getDevice(), &framebufferInfo, nullptr, &m_swapChainFrameBuffers[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create framebuffer!");
-		}
-	}
-
-	// std::cout << "Frame buffers created" << '\n';
-}
 
 void VulkanApp::createCommandPools() {
 	QueueFamilyIndices queueFamilyIndices = m_context.getQueueFamilies();
@@ -402,7 +379,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = m_renderPass.get();
-	renderPassInfo.framebuffer = m_swapChainFrameBuffers[imageIndex];
+	renderPassInfo.framebuffer = m_swapchain.getFramebuffers()[imageIndex];
 	// on bind sur quelle swapchainFramebuffer on va écrire (qui est est lui meme relié a une swap chain image)
 
 	renderPassInfo.renderArea.offset = {0, 0};
@@ -597,9 +574,8 @@ void VulkanApp::drawFrame() {
 }
 
 void VulkanApp::cleanupSwapChain() {
-	for (auto frameBuffer : m_swapChainFrameBuffers) {
-		vkDestroyFramebuffer(m_context.getDevice(), frameBuffer, nullptr);
-	}
+
+	m_swapchain.cleanup();
 
 	vkDestroyImageView(m_context.getDevice(), m_colorImageView, nullptr);
 	vkDestroyImage(m_context.getDevice(), m_colorImage, nullptr);
@@ -609,7 +585,6 @@ void VulkanApp::cleanupSwapChain() {
 	vkDestroyImage(m_context.getDevice(), m_depthImage, nullptr);
 	vkFreeMemory(m_context.getDevice(), m_depthImageMemory, nullptr);
 
-	m_swapchain.cleanup();
 
 }
 
@@ -631,13 +606,13 @@ void VulkanApp::recreateSwapChain() {
 	// les images views doivent etre recrée car sont lies au dimensions des images de la swapchain
 	createColorRessources();
 	createDepthResources();
-	createFrameBuffers();
-	// pareil pour les framebuffers
+
+	m_swapchain.createFrameBuffers(m_renderPass.get(), m_depthImageView, m_colorImageView);
 }
 
 void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 
-
+    vkDeviceWaitIdle(m_context.getDevice());
 
 	cleanupSwapChain();
 
@@ -1202,27 +1177,6 @@ void VulkanApp::generateMipmaps(VkCommandPool commandPool, VkQueue queue, VkImag
 	endSingleTimeCommands(commandBuffer, commandPool, queue);
 }
 
-VkSampleCountFlagBits VulkanApp::getMaxMsaa() {
-	VkPhysicalDeviceProperties properties;
-	vkGetPhysicalDeviceProperties(m_context.getPhysicalDevice(), &properties);
-
-	VkSampleCountFlags counts = properties.limits.framebufferColorSampleCounts & properties.limits.framebufferDepthSampleCounts;
-
-	if (counts & VK_SAMPLE_COUNT_64_BIT)
-		return VK_SAMPLE_COUNT_64_BIT;
-	if (counts & VK_SAMPLE_COUNT_32_BIT)
-		return VK_SAMPLE_COUNT_32_BIT;
-	if (counts & VK_SAMPLE_COUNT_16_BIT)
-		return VK_SAMPLE_COUNT_16_BIT;
-	if (counts & VK_SAMPLE_COUNT_8_BIT)
-		return VK_SAMPLE_COUNT_8_BIT;
-	if (counts & VK_SAMPLE_COUNT_4_BIT)
-		return VK_SAMPLE_COUNT_4_BIT;
-	if (counts & VK_SAMPLE_COUNT_2_BIT)
-		return VK_SAMPLE_COUNT_2_BIT;
-
-	return VK_SAMPLE_COUNT_1_BIT;
-}
 
 void VulkanApp::createColorRessources() {
 	VkFormat colorFormat = m_swapchain.getImageFormat();

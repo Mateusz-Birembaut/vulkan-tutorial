@@ -7,6 +7,7 @@
 #include <limits>
 #include <set>
 #include <stdexcept>
+#include <array>
 
 /// @brief creates the swapchain and the image views
 /// @param context
@@ -17,7 +18,7 @@ void SwapChain::init(VulkanContext* context, GLFWwindow* window) {
 	createImageViews();
 }
 
-/// @brief Recreates the swapchain and its image views
+/// @brief Recreates the swapchain and its image views and frame buffers, recreation of frame buffers not called here
 /// @param window
 void SwapChain::recreate(GLFWwindow* window) {
 	cleanup();
@@ -29,11 +30,20 @@ void SwapChain::recreate(GLFWwindow* window) {
 void SwapChain::cleanup() {
 	VkDevice device = m_context->getDevice();
 
+	cleanupFramebuffers();
+
 	for (auto imageView : m_imageViews) {
 		vkDestroyImageView(device, imageView, nullptr);
 	}
 
 	vkDestroySwapchainKHR(device, m_swapChain, nullptr);
+}
+
+void SwapChain::cleanupFramebuffers() {
+    for (auto framebuffer : m_frameBuffers) {
+        vkDestroyFramebuffer(m_context->getDevice(), framebuffer, nullptr);
+    }
+    m_frameBuffers.clear();
 }
 
 /// @brief Gives a color format for the swapchain images
@@ -143,6 +153,33 @@ void SwapChain::create(GLFWwindow* window) {
 
 	m_imageFormat = surfaceFormat.format;
 	m_extent = extent;
+}
+
+
+void SwapChain::createFrameBuffers(VkRenderPass renderPass, VkImageView depthImageView, VkImageView colorImageView) {
+	m_frameBuffers.resize(m_imageViews.size());
+
+	for (size_t i{0}; i < m_frameBuffers.size(); ++i) {
+
+		std::array<VkImageView, 3> attachments = {
+			colorImageView, // MSAA color 
+			depthImageView, // depth
+			m_imageViews[i], // swapchain image (resolve target)
+		};
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = renderPass;
+		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+		framebufferInfo.pAttachments = attachments.data();
+		framebufferInfo.width = m_extent.width;
+		framebufferInfo.height = m_extent.height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(m_context->getDevice(), &framebufferInfo, nullptr, &m_frameBuffers[i]) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create framebuffer!");
+		}
+	}
 }
 
 void SwapChain::createImageViews() {

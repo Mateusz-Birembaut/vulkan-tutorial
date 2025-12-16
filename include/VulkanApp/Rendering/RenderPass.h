@@ -15,7 +15,7 @@ public:
 	void init(VulkanContext* context, SwapChain* swapchain);
 	void cleanup() noexcept;
 
-	VkRenderPass get() { return m_renderPass;};
+	VkRenderPass get() { return m_renderPass; };
 
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat findDepthFormat();

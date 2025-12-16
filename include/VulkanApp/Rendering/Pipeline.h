@@ -16,6 +16,7 @@ public:
 	Pipeline() = default;
 	~Pipeline() = default;
 
+	// Initialize with required external objects. Pipeline does not own them.
 	void init(VulkanContext* context, VkRenderPass renderPass, VkDescriptorSetLayout descriptorSetLayout);
 	void cleanup();
 

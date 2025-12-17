@@ -7,6 +7,7 @@
 
 #include <VulkanApp/Rendering/Pipeline.h>
 #include <VulkanApp/Rendering/RenderPass.h>
+#include <VulkanApp/Rendering/Descriptors.h>
 
 #include <VulkanApp/Resources/Mesh.h>
 
@@ -24,7 +25,7 @@
 constexpr uint32_t g_screen_width{800};
 constexpr uint32_t g_screen_height{600};
 
-constexpr int g_max_frames_in_flight{2};
+constexpr uint32_t g_max_frames_in_flight{2};
 
 const std::string g_model_path = "Models/viking_room.obj";
 const std::string g_texture_path = "Textures/viking_room.png";
@@ -62,12 +63,17 @@ class VulkanApp {
 		SwapChain m_swapchain;
 		Pipeline m_pipeline;
 		RenderPass m_renderPass;
+		Descriptors m_descriptors;
+
+		Camera m_camera{};
 
 	void initWindow();
 
 	void initVulkan();
 	//void createRenderPass();
-	void createDescriptorSetLayout();
+	
+	//void createDescriptorSetLayout();
+
 	//void createGraphicsPipeline();
 	//void createFrameBuffers();
 	void createCommandPools();
@@ -77,8 +83,10 @@ class VulkanApp {
 	void createTextureImageView();
 	void createTextureImageSampler();
 	void createUniformBuffer();
-	void createDescriptorPool();
-	void createDescriptorSets();
+
+	//void createDescriptorPool();
+	//void createDescriptorSets();
+
 	void loadMesh();
 	void createMeshBuffer();
 
@@ -137,7 +145,7 @@ class VulkanApp {
 
 
 	
-	VkDescriptorSetLayout m_descriptorSetLayout;
+
 /* 	VkPipelineLayout m_pipelineLayout;
 	VkPipeline m_graphicsPipeline; */
 
@@ -165,8 +173,7 @@ class VulkanApp {
 	std::vector<VkDeviceMemory> m_uniformBuffersMemory;
 	std::vector<void*> m_uniformBuffersMapped;
 
-	VkDescriptorPool m_descriptorPool;
-	std::vector<VkDescriptorSet> m_descriptorSets;
+
 
 	//std::vector<VkFramebuffer> m_swapChainFrameBuffers;
 
@@ -190,7 +197,7 @@ class VulkanApp {
 	VkSampleCountFlagBits m_msaaSamples;
 	VkSampleCountFlagBits getMaxMsaa();
 
-	Camera m_camera{};
+
 
 	// frame timing for smooth movement
 	float m_deltaTime{0.0f};

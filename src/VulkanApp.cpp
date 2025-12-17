@@ -8,8 +8,9 @@
 
 #include <VulkanApp/Core/VulkanContext.h>
 
+#include <VulkanApp/Utils/Uniforms.h>
 
-#include "Uniforms.h"
+
 #include "Utility.h"
 #include "Vertex.h"
 #include "stb_image.h"
@@ -88,76 +89,34 @@ void VulkanApp::framebufferResizeCallback(GLFWwindow* window, int width, int hei
 
 
 void VulkanApp::initVulkan() {
-	/*
-	createInstance();
-	setupDebugMessenger();
-	createSurface();
-	pickPhysicalDevice();
-	createLogicalDevice(); */
+
 	m_context.init(m_window, true);
-	// initialize swapchain (creates swapchain and image views)
 	m_swapchain.init(&m_context, m_window);
 	m_renderPass.init(&m_context, &m_swapchain);
-	createDescriptorSetLayout();
-	//createGraphicsPipeline();
-
-	m_pipeline.init(&m_context, m_renderPass.get(), m_descriptorSetLayout);
 
 	createCommandPools();
-	createColorRessources();
-	createDepthResources();
-	//createFrameBuffers();
+	createUniformBuffer();
+
 	createTextureImage();
 	createTextureImageView();
 	createTextureImageSampler();
 
-    m_swapchain.createFrameBuffers(m_renderPass.get(), m_depthImageView, m_colorImageView);
-    
+	m_descriptors.init(&m_context, g_max_frames_in_flight, m_uniformBuffers, m_textureImageView, m_textureSampler);
+
+	m_pipeline.init(&m_context, m_renderPass.get(), m_descriptors.getSetLayout());
+
+	createColorRessources();
+	createDepthResources();
+
 
 	loadMesh();
 	createMeshBuffer();
-	createUniformBuffer();
-	createDescriptorPool();
-	createDescriptorSets();
+
 	createCommandBuffers();
 	createSyncObjects();
+
+    m_swapchain.createFrameBuffers(m_renderPass.get(), m_depthImageView, m_colorImageView);
 }
-
-
-
-
-void VulkanApp::createDescriptorSetLayout() {
-	// défini quels type de descriptor qui peut etre bound
-
-	VkDescriptorSetLayoutBinding uboLayoutBinding{};
-	uboLayoutBinding.binding = 0;
-	uboLayoutBinding.descriptorCount = 1;
-	// possible d'avoir un array, pour ça qu'on a un count, peut etre utilise pour avoir des transformations sur chaque bone dans un squelette d'animation
-	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	// a quel stage on va utiliser le ubo, peut en avoir plusieurs ou VK_SHADER_STAGE_ALL_GRAPHICS pour tous
-	uboLayoutBinding.pImmutableSamplers = nullptr; // optional
-	// utilisé pour les uniforms en rapport avec de l'image sampling
-
-	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	samplerLayoutBinding.binding = 1;
-	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	samplerLayoutBinding.pImmutableSamplers = nullptr; // optional
-
-	std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
-	VkDescriptorSetLayoutCreateInfo layoutInfo{};
-	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-	layoutInfo.pBindings = bindings.data();
-
-	if (vkCreateDescriptorSetLayout(m_context.getDevice(), &layoutInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create descriptor set layout!");
-	}
-}
-
-
 
 void VulkanApp::createCommandPools() {
 	QueueFamilyIndices queueFamilyIndices = m_context.getQueueFamilies();
@@ -440,7 +399,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	vkCmdBindDescriptorSets(commandBuffer,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				m_pipeline.getLayout(),
-				0, 1, &m_descriptorSets[m_currentFrame], 0, nullptr);
+				0, 1, &m_descriptors.getSets()[m_currentFrame], 0, nullptr);
 
 	// utilisation de l'index buffer mtn
 	vkCmdDrawIndexed(commandBuffer, m_mesh.indicesCount(), 1, 0, 0, 0);
@@ -626,8 +585,8 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 		vkFreeMemory(m_context.getDevice(), m_uniformBuffersMemory[i], nullptr);
 	}
 
-	vkDestroyDescriptorPool(m_context.getDevice(), m_descriptorPool, nullptr);
-	vkDestroyDescriptorSetLayout(m_context.getDevice(), m_descriptorSetLayout, nullptr);
+	//vkDestroyDescriptorPool(m_context.getDevice(), m_descriptorPool, nullptr);
+	//vkDestroyDescriptorSetLayout(m_context.getDevice(), m_descriptorSetLayout, nullptr);
 	vkDestroyBuffer(m_context.getDevice(), m_meshBuffer, nullptr);
 	vkFreeMemory(m_context.getDevice(), m_meshBufferMemory, nullptr);
 
@@ -671,80 +630,7 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage) {
 	// m_uniformBuffersMapped adresse accessible ou vont être stockées les données de l'ubo
 }
 
-void VulkanApp::createDescriptorPool() {
-	// les descriptor peuvent pas etre créer directement, ils doivent etre alloué depuis un pool
-	// comme les command buffer
 
-	std::array<VkDescriptorPoolSize, 2> poolSizes{};
-	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = static_cast<uint32_t>(g_max_frames_in_flight);
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[1].descriptorCount = static_cast<uint32_t>(g_max_frames_in_flight);
-
-	VkDescriptorPoolCreateInfo infoPool{};
-	infoPool.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	infoPool.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-	// le nombre de descriptor qui peuvent être alloué
-	infoPool.pPoolSizes = poolSizes.data();
-	// nombre max de descriptor
-	infoPool.maxSets = static_cast<uint32_t>(g_max_frames_in_flight);
-
-	if (vkCreateDescriptorPool(m_context.getDevice(), &infoPool, nullptr, &m_descriptorPool) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create descriptor pool!");
-	}
-}
-
-void VulkanApp::createDescriptorSets() { // les descriptors vont décrire comment acceder aux ressources depuis les shaders
-	// les sets sont des paquest de descriptors
-	std::vector<VkDescriptorSetLayout> layouts(g_max_frames_in_flight, m_descriptorSetLayout);
-
-	VkDescriptorSetAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = m_descriptorPool;
-	allocInfo.descriptorSetCount = static_cast<uint32_t>(g_max_frames_in_flight);
-	allocInfo.pSetLayouts = layouts.data();
-
-	m_descriptorSets.resize(g_max_frames_in_flight);
-
-	if (vkAllocateDescriptorSets(m_context.getDevice(), &allocInfo, m_descriptorSets.data()) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create descriptor sets!");
-	}
-
-	for (int i{0}; i < g_max_frames_in_flight; ++i) {
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = m_uniformBuffers[i];
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UniformBufferObject);
-
-		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = m_textureImageView;
-		imageInfo.sampler = m_textureSampler;
-
-		std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
-		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[0].dstSet = m_descriptorSets[i];
-		descriptorWrites[0].dstBinding = 0;
-		// binding de l'uniforme dans le shader
-		descriptorWrites[0].dstArrayElement = 0; // un descriptor peut etre un array un array,
-		// on doit spécifier le premier index, ici pas un tableaun l'indice est 0
-		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[0].descriptorCount = 1;
-		// combien d'array on veut update
-
-		descriptorWrites[0].pBufferInfo = &bufferInfo; // refers to un data buffer
-
-		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[1].dstSet = m_descriptorSets[i];
-		descriptorWrites[1].dstBinding = 1;
-		descriptorWrites[1].dstArrayElement = 0;
-		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorWrites[1].descriptorCount = 1;
-		descriptorWrites[1].pImageInfo = &imageInfo;
-
-		vkUpdateDescriptorSets(m_context.getDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-	}
-}
 
 
 void VulkanApp::setObjectName(VkBuffer buffer, const char* name) {

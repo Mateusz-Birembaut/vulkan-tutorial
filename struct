@@ -1,0 +1,22 @@
+/home/mat/VulkanTutorial/
+├── Core/
+│   ├── VulkanContext.h/.cpp      # Instance, Device, Queues
+│   └── SwapChain.h/.cpp          # SwapChain, ImageViews
+├── Rendering/
+│   ├── Pipeline.h/.cpp           # Graphics Pipeline, Shaders
+│   ├── RenderPass.h/.cpp         # RenderPass, Framebuffers
+│   └── Descriptors.h/.cpp        # DescriptorPool, Sets, Layouts
+├── Resources/
+│   ├── Buffer.h/.cpp             # Buffer creation/management
+│   ├── Image.h/.cpp              # Image, ImageView, Sampler
+│   └── Texture.h/.cpp            # Texture loading with mipmaps
+├── Commands/
+│   └── CommandManager.h/.cpp     # CommandPools, CommandBuffers
+├── Sync/
+│   └── SyncObjects.h/.cpp        # Semaphores, Fences
+├── Debug/
+│   └── VulkanDebug.h/.cpp        # Validation, Debug Messenger
+├── VulkanApp.h/.cpp              # Coordination principale
+├── Mesh.h/.cpp
+├── Camera.h/.cpp
+└── main.cpp

@@ -8,6 +8,7 @@ set(OLD_GLOB
   "/home/mat/VulkanTutorial/src/Core/SwapChain.cpp"
   "/home/mat/VulkanTutorial/src/Core/VulkanContext.cpp"
   "/home/mat/VulkanTutorial/src/Core/VulkanDebug.cpp"
+  "/home/mat/VulkanTutorial/src/Rendering/Descriptors.cpp"
   "/home/mat/VulkanTutorial/src/Rendering/Pipeline.cpp"
   "/home/mat/VulkanTutorial/src/Rendering/RenderPass.cpp"
   "/home/mat/VulkanTutorial/src/VulkanApp.cpp"

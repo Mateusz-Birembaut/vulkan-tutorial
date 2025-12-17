@@ -26,7 +26,7 @@ void SwapChain::recreate(GLFWwindow* window) {
 	createImageViews();
 }
 
-/// @brief Destroyes the image views then the swapchain
+/// @brief Destroyes the frame buffers, the image views then the swapchain
 void SwapChain::cleanup() {
 	VkDevice device = m_context->getDevice();
 
@@ -95,6 +95,7 @@ VkExtent2D SwapChain::chooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabi
 	}
 }
 
+
 void SwapChain::create(GLFWwindow* window) {
 
 	SwapChainSupportDetails swapChainSupport{m_context->getSwapChainSupport()};
@@ -155,7 +156,10 @@ void SwapChain::create(GLFWwindow* window) {
 	m_extent = extent;
 }
 
-
+/// @brief Create framebuffers with 3 attachments : color (msaa), depth, swapchain image
+/// @param renderPass 
+/// @param depthImageView 
+/// @param colorImageView 
 void SwapChain::createFrameBuffers(VkRenderPass renderPass, VkImageView depthImageView, VkImageView colorImageView) {
 	m_frameBuffers.resize(m_imageViews.size());
 
@@ -182,6 +186,7 @@ void SwapChain::createFrameBuffers(VkRenderPass renderPass, VkImageView depthIma
 	}
 }
 
+/// @brief Creates an VkImageView for each swapchain image and stores them in m_imageViews. Each view is 2D, uses the swapchain image format, a single mip level/layer and the color aspect.
 void SwapChain::createImageViews() {
 	m_imageViews.resize(m_images.size());
 

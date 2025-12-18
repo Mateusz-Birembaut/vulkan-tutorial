@@ -22,7 +22,7 @@ void RenderPass::cleanup() noexcept {
 	}
 }
 
-VkFormat RenderPass::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
+VkFormat RenderPass::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const {
 
 	for (VkFormat format : candidates) {
 		VkFormatProperties props;
@@ -38,7 +38,7 @@ VkFormat RenderPass::findSupportedFormat(const std::vector<VkFormat>& candidates
 	throw std::runtime_error("failed to find supported format");
 }
 
-VkFormat RenderPass::findDepthFormat() {
+VkFormat RenderPass::findDepthFormat() const {
 	return findSupportedFormat(
 	    {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
 	    VK_IMAGE_TILING_OPTIMAL,

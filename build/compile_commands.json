@@ -49,6 +49,12 @@
 },
 {
   "directory": "/home/mat/VulkanTutorial/build",
+  "command": "/usr/bin/g++ -I/home/mat/VulkanTutorial/include -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial -g -std=gnu++17 -o CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.o -c /home/mat/VulkanTutorial/src/Resources/Image.cpp",
+  "file": "/home/mat/VulkanTutorial/src/Resources/Image.cpp",
+  "output": "CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.o"
+},
+{
+  "directory": "/home/mat/VulkanTutorial/build",
   "command": "/usr/bin/g++ -I/home/mat/VulkanTutorial/include -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial -g -std=gnu++17 -o CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.o -c /home/mat/VulkanTutorial/src/Resources/Mesh.cpp",
   "file": "/home/mat/VulkanTutorial/src/Resources/Mesh.cpp",
   "output": "CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.o"

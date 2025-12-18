@@ -17,8 +17,8 @@ public:
 
 	VkRenderPass get() { return m_renderPass; };
 
-	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-	VkFormat findDepthFormat();
+	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const ;
+	VkFormat findDepthFormat() const ;
 
 private:
 

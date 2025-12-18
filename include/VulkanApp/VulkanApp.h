@@ -1,6 +1,4 @@
-#ifndef VULKAN_APP_H
-#define VULKAN_APP_H
-
+#pragma once
 
 #include <VulkanApp/Core/VulkanContext.h>
 #include <VulkanApp/Core/SwapChain.h>
@@ -10,6 +8,7 @@
 #include <VulkanApp/Rendering/Descriptors.h>
 #include <VulkanApp/Commands/CommandManager.h>
 #include <VulkanApp/Resources/Buffer.h>
+#include <VulkanApp/Resources/Image.h>
 
 #include <VulkanApp/Resources/Mesh.h>
 
@@ -66,42 +65,31 @@ class VulkanApp {
 		Descriptors m_descriptors;
 		CommandManager m_commandManager;
 
+		std::vector<Buffer> m_uniformBuffers;
+
+		Mesh m_mesh;
+
+		Image m_color;
+		Image m_depth;
+		Image m_texture;
+
 		Camera m_camera{};
 
 	void initWindow();
 
 	void initVulkan();
 
-	void createColorRessources();
-	void createDepthResources();
-	void createTextureImage();
-	void createTextureImageView();
-	void createTextureImageSampler();
+
 	void createUniformBuffer();
 
-	void loadMesh();
-	void createMeshBuffer();
-
-
 	void createSyncObjects();
-
-	void createImage(uint32_t width, uint32_t height, VkFormat format, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkSharingMode sharingMode, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
-	void copyBufferToImage(VkCommandPool commandPool, VkQueue queue, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
  
-
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-
-	void transitionImageLayout(VkCommandPool commandPool, VkQueue queue, VkImage image, VkFormat format, uint32_t mipLevels, VkImageLayout oldLayout, VkImageLayout newLayout);
-
 
 	void recreateSwapChain();
 
 	void updateUniformBuffer(uint32_t currentFrame);
 	void drawFrame();
-
-	void recordGraphicsCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-
-	void setupDebugMessenger(VkDevice device);
 
 	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
@@ -111,30 +99,6 @@ class VulkanApp {
 	void cleanupSwapChain();
 
 	bool hasStencilComponent(VkFormat format);
-	VkFormat findDepthFormat();
-	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-
-	VkImageView createImageView(VkImage image, VkFormat format, uint32_t mipLevels, VkImageAspectFlags aspectFlags);
-
-	void generateMipmaps(VkCommandPool commandPool, VkQueue queue, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
-
-
-	Mesh m_mesh;
-
-	VkImage m_depthImage;
-	VkDeviceMemory m_depthImageMemory;
-	VkImageView m_depthImageView;
-
-	uint32_t m_mipLevels{1};
-	VkImage m_textureImage;
-	VkDeviceMemory m_textureImageMemory;
-	VkImageView m_textureImageView;
-
-	VkSampler m_textureSampler;
-
-	// faut un inform buffer par frames in flight
-	std::vector<Buffer> m_uniformBuffers;
-
 
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;
@@ -143,29 +107,13 @@ class VulkanApp {
 
 	int m_currentFrame{0};
 
-	bool m_framebufferResized{false};
-	// VK_ERROR_OUT_OF_DATE_KHR, est pas garantie pendant le resize en fonction de la plateforme
-	// donc ajout du bool pour le gerer correctement
+	bool m_framebufferResized{false};// VK_ERROR_OUT_OF_DATE_KHR is not guarentee when resizing, it fixes that 
 
-	VkImage m_colorImage;
-	VkDeviceMemory m_colorImageMemory;
-	VkImageView m_colorImageView;
-
-	//VkSampleCountFlagBits m_msaaSamples;
-	//VkSampleCountFlagBits getMaxMsaa();
-
-
-
-	// frame timing for smooth movement
 	float m_deltaTime{0.0f};
 	double m_lastFrame{0.0};
 
-	// input processing (polling each frame)
 	void processInput(float dt);
-
 	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 	void onKey(int key, int scancode, int action, int mods);
 
 };
-
-#endif // VULKAN_APP_H

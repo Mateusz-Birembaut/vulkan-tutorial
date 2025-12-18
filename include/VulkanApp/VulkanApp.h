@@ -9,6 +9,7 @@
 #include <VulkanApp/Rendering/RenderPass.h>
 #include <VulkanApp/Rendering/Descriptors.h>
 #include <VulkanApp/Commands/CommandManager.h>
+#include <VulkanApp/Resources/Buffer.h>
 
 #include <VulkanApp/Resources/Mesh.h>
 
@@ -31,8 +32,6 @@ constexpr uint32_t g_max_frames_in_flight{2};
 const std::string g_model_path = "Models/viking_room.obj";
 const std::string g_texture_path = "Textures/viking_room.png";
 
-/* const std::string g_vertex_shader = "Shaders/vert.spv";
-const std::string g_fragment_shader = "Shaders/frag.spv"; */
 
 
 #ifdef NDEBUG
@@ -72,14 +71,7 @@ class VulkanApp {
 	void initWindow();
 
 	void initVulkan();
-	//void createRenderPass();
-	
-	//void createDescriptorSetLayout();
 
-	//void createGraphicsPipeline();
-	//void createFrameBuffers();
-	//void createCommandPools();
-	
 	void createColorRessources();
 	void createDepthResources();
 	void createTextureImage();
@@ -87,28 +79,20 @@ class VulkanApp {
 	void createTextureImageSampler();
 	void createUniformBuffer();
 
-	//void createDescriptorPool();
-	//void createDescriptorSets();
-
 	void loadMesh();
 	void createMeshBuffer();
 
 
 	void createSyncObjects();
 
-	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 	void createImage(uint32_t width, uint32_t height, VkFormat format, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkSharingMode sharingMode, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 	void copyBufferToImage(VkCommandPool commandPool, VkQueue queue, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+ 
 
-	//void createCommandBuffers();
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
-	//VkCommandBuffer beginSingleTimeCommands(VkCommandPool commandPool);
-	//void endSingleTimeCommands(VkCommandBuffer commandBuffer, VkCommandPool commandPool, VkQueue queue);
 	void transitionImageLayout(VkCommandPool commandPool, VkQueue queue, VkImage image, VkFormat format, uint32_t mipLevels, VkImageLayout oldLayout, VkImageLayout newLayout);
 
-	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags propreties);
 
 	void recreateSwapChain();
 
@@ -116,8 +100,6 @@ class VulkanApp {
 	void drawFrame();
 
 	void recordGraphicsCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-
-
 
 	void setupDebugMessenger(VkDevice device);
 
@@ -131,31 +113,14 @@ class VulkanApp {
 	bool hasStencilComponent(VkFormat format);
 	VkFormat findDepthFormat();
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-	
-	//QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-	//SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
-
-
-
-	//VkShaderModule createShaderModule(const std::vector<char>& code);
 
 	VkImageView createImageView(VkImage image, VkFormat format, uint32_t mipLevels, VkImageAspectFlags aspectFlags);
 
 	void generateMipmaps(VkCommandPool commandPool, VkQueue queue, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
 
-
-
-	
-
-/* 	VkPipelineLayout m_pipelineLayout;
-	VkPipeline m_graphicsPipeline; */
-
-
-
 	Mesh m_mesh;
-	VkBuffer m_meshBuffer; // combine vertices et indices, c'est ce qui est recommandé
-	VkDeviceMemory m_meshBufferMemory;
+	Buffer m_mBuffer;
 	VkDeviceSize m_indicesOffset;
 
 	VkImage m_depthImage;
@@ -170,14 +135,7 @@ class VulkanApp {
 	VkSampler m_textureSampler;
 
 	// faut un inform buffer par frames in flight
-	std::vector<VkBuffer> m_uniformBuffers;
-	std::vector<VkDeviceMemory> m_uniformBuffersMemory;
-	std::vector<void*> m_uniformBuffersMapped;
-
-
-
-	//std::vector<VkFramebuffer> m_swapChainFrameBuffers;
-
+	std::vector<Buffer> m_uniformBuffers;
 
 
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;

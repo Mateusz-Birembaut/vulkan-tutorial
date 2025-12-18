@@ -12,6 +12,7 @@ set(OLD_GLOB
   "/home/mat/VulkanTutorial/src/Rendering/Descriptors.cpp"
   "/home/mat/VulkanTutorial/src/Rendering/Pipeline.cpp"
   "/home/mat/VulkanTutorial/src/Rendering/RenderPass.cpp"
+  "/home/mat/VulkanTutorial/src/Resources/Buffer.cpp"
   "/home/mat/VulkanTutorial/src/VulkanApp.cpp"
   "/home/mat/VulkanTutorial/src/main.cpp"
   )

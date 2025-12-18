@@ -1,6 +1,7 @@
 #pragma once
 
 #include <VulkanApp/Core/VulkanContext.h>
+#include<VulkanApp/Resources/Buffer.h>
 
 #include <vulkan/vulkan.h>
 
@@ -14,7 +15,7 @@ class Descriptors {
 	Descriptors() = default;
 	~Descriptors() = default;
 
-	void init(VulkanContext* context, const uint32_t max_frames_in_flight, const std::vector<VkBuffer>& uniformBuffers, VkImageView textureImageView, VkSampler textureSampler);
+	void init(VulkanContext* context, const uint32_t max_frames_in_flight, const std::vector<Buffer>& uniformBuffers, VkImageView textureImageView, VkSampler textureSampler);
 	void cleanup() noexcept;
 
 	VkDescriptorSetLayout getSetLayout() { return  m_setLayout;};
@@ -24,7 +25,7 @@ class Descriptors {
       private:
 	void createSetLayout();
 	void createPool( const uint32_t max_frames_in_flight );
-	void createSets( const uint32_t max_frames_in_flight, const std::vector<VkBuffer>& uniformBuffers, VkImageView textureImageView, VkSampler textureSampler );
+	void createSets( const uint32_t max_frames_in_flight, const std::vector<Buffer>& uniformBuffers, VkImageView textureImageView, VkSampler textureSampler );
 
 	VulkanContext* m_context = nullptr;
 

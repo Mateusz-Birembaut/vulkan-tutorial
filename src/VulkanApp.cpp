@@ -8,6 +8,7 @@
 
 #include <VulkanApp/Core/VulkanContext.h>
 
+#include <VulkanApp/Resources/Buffer.h>
 #include <VulkanApp/Utils/Uniforms.h>
 
 
@@ -118,55 +119,6 @@ void VulkanApp::initVulkan() {
 }
 
 
-void VulkanApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
-
-	VkBufferCreateInfo bufferInfo{};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = size;
-	bufferInfo.usage = usage;
-	bufferInfo.sharingMode = sharingMode;
-
-	auto indices = m_context.getQueueFamilies();
-	std::set<uint32_t> uniqueIndices = {
-	    indices.graphicsFamily.value(),
-	    indices.transferFamily.value(),
-	};
-	std::vector<uint32_t> queueFamilyIndices(uniqueIndices.begin(), uniqueIndices.end());
-
-	if (sharingMode == VK_SHARING_MODE_CONCURRENT) {
-		// on défini les queues qui vont acceder a notre buffer
-		bufferInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size());
-		bufferInfo.pQueueFamilyIndices = queueFamilyIndices.data();
-	} else {
-		bufferInfo.queueFamilyIndexCount = 0;
-		bufferInfo.pQueueFamilyIndices = nullptr;
-	}
-
-	if (vkCreateBuffer(m_context.getDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create vertex buffer");
-	}
-	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(m_context.getDevice(), buffer, &memRequirements);
-
-	VkMemoryAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
-	// VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, permet de ne pas flush la mémoire, on s'assure que la mémoire mappé
-	// match le contenu de la mémoire alloué, peut etre moins performant que flush mais pas important pour l'instant
-
-	if (vkAllocateMemory(m_context.getDevice(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-		// alloue la mémoire, en fonction de VK_MEMORY_PROPERTY, sur le gpu ou la ram
-		throw std::runtime_error("failed to allocate vertex buffer memory");
-	}
-	// normalement
-
-	vkBindBufferMemory(m_context.getDevice(), buffer, bufferMemory, 0);
-	// fait le lien entre l'object buffer et l'espace mémoire attribué a bufferMemory
-	// dernier param : offset, ici 0, si c'est différent de 0,
-	// l'offset doit etre divisible par memRequirements.alignment
-};
-
 void VulkanApp::createMeshBuffer() {
 	VkDeviceSize verticesSize = m_mesh.vertexSize() * m_mesh.verticesCount();
 	VkDeviceSize indicesSize = m_mesh.indexSize() * m_mesh.indicesCount();
@@ -180,99 +132,35 @@ void VulkanApp::createMeshBuffer() {
 	m_indicesOffset = AlignTo(verticesSize, 4);
 	VkDeviceSize bufferSize = m_indicesOffset + indicesSize;
 
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
 
-	createBuffer(
-	    bufferSize,
-	    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-	    VK_SHARING_MODE_CONCURRENT,
-	    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-	    stagingBuffer, stagingBufferMemory);
-	setObjectName(stagingBuffer, "MeshStagingBuffer");
+	Buffer stagingBuffer;
+	stagingBuffer.init(&m_context, &m_commandManager, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_SHARING_MODE_CONCURRENT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	setObjectName(stagingBuffer.get(), "MeshStagingBuffer");
+	stagingBuffer.write(m_mesh.verticesData(), verticesSize, 0);
+	stagingBuffer.write(m_mesh.indicesData(), indicesSize, m_indicesOffset);
+	stagingBuffer.unmap();
 
-	void* data;
-	vkMapMemory(m_context.getDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, m_mesh.verticesData(), static_cast<size_t>(verticesSize));
+	m_mBuffer.init(&m_context, &m_commandManager, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_SHARING_MODE_CONCURRENT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-	memcpy(static_cast<char*>(data) + m_indicesOffset, m_mesh.indicesData(), static_cast<size_t>(indicesSize));
-	vkUnmapMemory(m_context.getDevice(), stagingBufferMemory);
+	setObjectName(m_mBuffer.get(), "MeshBuffer");
 
-	createBuffer(
-	    bufferSize,
-	    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-	    VK_SHARING_MODE_CONCURRENT,
-	    // sharing mode concurrent car va etre utilisé par la transfert queue et la graphics queue
-	    // comme j'ai fais en sorte de séparer les deux si possible
-	    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-	    m_meshBuffer, m_meshBufferMemory);
-
-	setObjectName(m_meshBuffer, "MeshsssssBuffer");
-
-	copyBuffer(stagingBuffer, m_meshBuffer, bufferSize);
-
-	vkDestroyBuffer(m_context.getDevice(), stagingBuffer, nullptr);
-	vkFreeMemory(m_context.getDevice(), stagingBufferMemory, nullptr);
+	stagingBuffer.copyTo(m_mBuffer.get(), bufferSize);
+	stagingBuffer.cleanup();
 }
 
+// uniform buffers are persistent so we keep the buffer map
 void VulkanApp::createUniformBuffer() {
 	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
 	m_uniformBuffers.resize(g_max_frames_in_flight);
-	m_uniformBuffersMemory.resize(g_max_frames_in_flight);
-	m_uniformBuffersMapped.resize(g_max_frames_in_flight);
 
 	for (int i{0}; i < g_max_frames_in_flight; ++i) {
-
-		createBuffer(
-		    bufferSize,
-		    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		    VK_SHARING_MODE_EXCLUSIVE,
-		    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		    m_uniformBuffers[i], m_uniformBuffersMemory[i]);
-
-		setObjectName(m_uniformBuffers[i], "UniformBuffer");
-
-		vkMapMemory(m_context.getDevice(), m_uniformBuffersMemory[i], 0, bufferSize, 0, &m_uniformBuffersMapped[i]);
+		Buffer& uniformBuffer = m_uniformBuffers[i];
+		uniformBuffer.init(&m_context, &m_commandManager ,bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		setObjectName(m_uniformBuffers[i].get(), "UniformBuffer");
+		uniformBuffer.map();
 	}
 }
-
-void VulkanApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-
-	VkCommandBuffer commandBuffer = m_commandManager.beginSingleTimeCommands(m_commandManager.getTransferCommandPool());
-	// commence a record sur la pool de transfer vu qu'on va copier des données
-
-	VkBufferCopy copyRegion{};
-	copyRegion.srcOffset = 0; // Optional
-	copyRegion.dstOffset = 0; // Optional
-	copyRegion.size = size;
-	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-	// commande pour effectuer le transfer
-
-	m_commandManager.endSingleTimeCommands(commandBuffer, m_commandManager.getTransferCommandPool(), m_context.getTransferQueue());
-}
-
-// on a besoin de combiner les besoin de notre app et les besoins de notre buffer
-// on recupère le type de mémoire gpu qui nous permet ça
-uint32_t VulkanApp::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
-	VkPhysicalDeviceMemoryProperties memProperties;
-	vkGetPhysicalDeviceMemoryProperties(m_context.getPhysicalDevice(), &memProperties);
-
-	// memProperties.memoryHeaps, ressources mémoire comme Vram, swap space in RAM (quand la vram est épuisé) ect.
-	// memProperties.memoryTypes, types de mémoire dans ces heaps
-	// on s'occupera pas de la heap, mais ca a un impact sur les perfs, dans d'autres applis faut vérifier
-
-	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-		if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties))
-			// si i = 0 => 0001, i = 0 => 0010
-			// permet de vérifier si le type est compatible mais pas suffisant, ex : si typeFilter 1010, a i =1 ca se stopperai mais pas forcement bon
-			// on a rajoute le check sur les propriétés pour voir si c'est vraiment compatible
-			return i;
-	}
-
-	throw std::runtime_error("failed to find suitable memory type!");
-}
-
 
 
 void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
@@ -318,11 +206,11 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline.get());
 	// VK_PIPELINE_BIND_POINT_GRAPHICS, c'est une pipeline de rendu
 
-	VkBuffer vertexBuffers[]{m_meshBuffer};
+	VkBuffer vertexBuffers[]{m_mBuffer.get()};
 	VkDeviceSize offsets[]{0};
 
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, m_meshBuffer, m_indicesOffset, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(commandBuffer, m_mBuffer.get(), m_indicesOffset, VK_INDEX_TYPE_UINT32);
 	// VK_INDEX_TYPE_UINT32 si on veut plus d'indices, mais dans ce cas modif vecteur d'indices aussi
 
 	// comme on a défini le viewport et scissor dynamiquement on doit les spécifier ici
@@ -533,12 +421,11 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 	vkFreeMemory(m_context.getDevice(), m_textureImageMemory, nullptr);
 
 	for (size_t i = 0; i < g_max_frames_in_flight; i++) {
-		vkDestroyBuffer(m_context.getDevice(), m_uniformBuffers[i], nullptr);
-		vkFreeMemory(m_context.getDevice(), m_uniformBuffersMemory[i], nullptr);
+		m_uniformBuffers[i].cleanup();
 	}
 
-	vkDestroyBuffer(m_context.getDevice(), m_meshBuffer, nullptr);
-	vkFreeMemory(m_context.getDevice(), m_meshBufferMemory, nullptr);
+	m_mBuffer.cleanup();
+
 
 	for (size_t i = 0; i < g_max_frames_in_flight; i++) {
 		vkDestroySemaphore(m_context.getDevice(), m_imageAvailableSemaphores[i], nullptr);
@@ -578,11 +465,9 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage) {
 
 	ubo.proj[1][1] *= -1; // car glm pour OpenGL et l'axe y est inversé par rapport a vulkan
 
-	memcpy(m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+	memcpy(m_uniformBuffers[currentImage].getMapped(), &ubo, sizeof(ubo));
 	// m_uniformBuffersMapped adresse accessible ou vont être stockées les données de l'ubo
 }
-
-
 
 
 void VulkanApp::setObjectName(VkBuffer buffer, const char* name) {
@@ -595,6 +480,7 @@ void VulkanApp::setObjectName(VkBuffer buffer, const char* name) {
 	if (func)
 		func(m_context.getDevice(), &nameInfo);
 }
+
 
 void VulkanApp::createTextureImage() {
 	int texWidth;
@@ -611,22 +497,19 @@ void VulkanApp::createTextureImage() {
 	// pour avoir notre mipmap on prend la + grande dimension, on recupere par combien de fois on peut diviser par 2
 	m_mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight))));
 
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-
-	createBuffer(
-	    imgSize,
+	Buffer stagingBuffer;
+	
+	stagingBuffer.init(&m_context, &m_commandManager,imgSize,
 	    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 	    VK_SHARING_MODE_EXCLUSIVE,
-	    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-	    stagingBuffer, stagingBufferMemory);
+	    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
-	setObjectName(stagingBuffer, "ImageStagingBuffer");
 
-	void* data;
-	vkMapMemory(m_context.getDevice(), stagingBufferMemory, 0, imgSize, 0, &data);
-	memcpy(data, pixels, static_cast<size_t>(imgSize));
-	vkUnmapMemory(m_context.getDevice(), stagingBufferMemory);
+	setObjectName(stagingBuffer.get(), "ImageStagingBuffer");
+
+	stagingBuffer.map();
+	stagingBuffer.write(pixels, imgSize, 0);
+	stagingBuffer.unmap();
 
 	stbi_image_free(pixels);
 
@@ -647,13 +530,12 @@ void VulkanApp::createTextureImage() {
 			      VK_IMAGE_LAYOUT_UNDEFINED /*on s'occupe pas de l'état precedent*/,
 			      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-	copyBufferToImage(m_commandManager.getTransferCommandPool(), m_context.getTransferQueue(), stagingBuffer, m_textureImage, texWidth, texHeight);
+	copyBufferToImage(m_commandManager.getTransferCommandPool(), m_context.getTransferQueue(), stagingBuffer.get(), m_textureImage, texWidth, texHeight);
 
 	// une
 	generateMipmaps(m_commandManager.getCommandPool(), m_context.getGraphicsQueue(), m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, m_mipLevels);
 
-	vkDestroyBuffer(m_context.getDevice(), stagingBuffer, nullptr);
-	vkFreeMemory(m_context.getDevice(), stagingBufferMemory, nullptr);
+	stagingBuffer.cleanup();
 }
 
 void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format, uint32_t mipLevels,
@@ -696,7 +578,7 @@ void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format, ui
 	VkMemoryAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+	allocInfo.memoryTypeIndex = m_context.findMemoryType(memRequirements.memoryTypeBits, properties);
 
 	if (vkAllocateMemory(m_context.getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate image memory!");

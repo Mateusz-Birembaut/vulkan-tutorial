@@ -98,6 +98,13 @@ build CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.o: CXX_COMPILER
   OBJECT_DIR = CMakeFiles/VulkanTutorial.dir
   OBJECT_FILE_DIR = CMakeFiles/VulkanTutorial.dir/src/Rendering
 
+build CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.o: CXX_COMPILER__VulkanTutorial_unscanned_Debug /home/mat/VulkanTutorial/src/Resources/Buffer.cpp || cmake_object_order_depends_target_VulkanTutorial
+  DEP_FILE = CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.o.d
+  FLAGS = -g -std=gnu++17
+  INCLUDES = -I/home/mat/VulkanTutorial/include -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial
+  OBJECT_DIR = CMakeFiles/VulkanTutorial.dir
+  OBJECT_FILE_DIR = CMakeFiles/VulkanTutorial.dir/src/Resources
+
 build CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o: CXX_COMPILER__VulkanTutorial_unscanned_Debug /home/mat/VulkanTutorial/src/VulkanApp.cpp || cmake_object_order_depends_target_VulkanTutorial
   DEP_FILE = CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o.d
   FLAGS = -g -std=gnu++17
@@ -127,7 +134,7 @@ build CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o: CXX_COMPILER__VulkanTu
 #############################################
 # Link the executable VulkanTutorial
 
-build VulkanTutorial: CXX_EXECUTABLE_LINKER__VulkanTutorial_Debug CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.o CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.o CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.o CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.o CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o CMakeFiles/VulkanTutorial.dir/src/main.cpp.o CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o | /usr/lib/x86_64-linux-gnu/libvulkan.so /usr/lib/x86_64-linux-gnu/libglfw.so.3.3
+build VulkanTutorial: CXX_EXECUTABLE_LINKER__VulkanTutorial_Debug CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.o CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.o CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.o CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.o CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.o CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o CMakeFiles/VulkanTutorial.dir/src/main.cpp.o CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o | /usr/lib/x86_64-linux-gnu/libvulkan.so /usr/lib/x86_64-linux-gnu/libglfw.so.3.3
   FLAGS = -g
   LINK_LIBRARIES = /usr/lib/x86_64-linux-gnu/libvulkan.so  /usr/lib/x86_64-linux-gnu/libglfw.so.3.3
   OBJECT_DIR = CMakeFiles/VulkanTutorial.dir

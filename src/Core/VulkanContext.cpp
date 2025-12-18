@@ -401,3 +401,23 @@ void VulkanContext::cleanup() noexcept {
 }
 
 
+/// @brief finds a memory type that fits the requirements 
+/// @param typeFilter 
+/// @param properties 
+/// @return the index of the suitable memory type
+uint32_t VulkanContext::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProperties);
+
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+		if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties)) 
+			// si i = 0 => 0001, i = 0 => 0010
+			// permet de vérifier si le type est compatible mais pas suffisant, ex : si typeFilter 1010, a i =1 ca se stopperai mais pas forcement bon
+			// on a rajoute le check sur les propriétés pour voir si c'est vraiment compatible
+			return i;
+	}
+
+	throw std::runtime_error("failed to find suitable memory type!");
+}
+
+

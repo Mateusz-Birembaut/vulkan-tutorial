@@ -7,7 +7,7 @@
 #include <stdexcept>
 
 
-void Descriptors::init(VulkanContext* context, const uint32_t max_frames_in_flight, const std::vector<VkBuffer>& uniformBuffers, VkImageView textureImageView, VkSampler textureSampler){
+void Descriptors::init(VulkanContext* context, const uint32_t max_frames_in_flight, const std::vector<Buffer>& uniformBuffers, VkImageView textureImageView, VkSampler textureSampler){
 	m_context = context;
 	createSetLayout();
 	createPool(max_frames_in_flight);
@@ -69,7 +69,7 @@ void Descriptors::createPool(const uint32_t max_frames_in_flight) {
 
 
 void Descriptors::createSets( const uint32_t max_frames_in_flight, 
-							  const std::vector<VkBuffer>& uniformBuffers,
+							  const std::vector<Buffer>& uniformBuffers,
 							  VkImageView textureImageView,
 							  VkSampler textureSampler) { 
 
@@ -89,7 +89,7 @@ void Descriptors::createSets( const uint32_t max_frames_in_flight,
 
 	for (int i{0}; i < max_frames_in_flight; ++i) {
 		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = uniformBuffers[i];
+		bufferInfo.buffer = uniformBuffers[i].get();
 		bufferInfo.offset = 0;
 		bufferInfo.range = sizeof(UniformBufferObject);
 

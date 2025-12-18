@@ -60,6 +60,8 @@ public:
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 	QueueFamilyIndices getQueueFamilies();
 
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+
 private:
 	VulkanDebug m_debug;
 

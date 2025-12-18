@@ -39,7 +39,7 @@ void VulkanApp::initWindow() {
 }
 
 void VulkanApp::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	std::cout << "keyCallback: key=" << key << " action=" << action << " scancode=" << scancode << " mods=" << mods << '\n';
+	//std::cout << "keyCallback: key=" << key << " action=" << action << " scancode=" << scancode << " mods=" << mods << '\n';
 	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
 	if (app) app->onKey(key, scancode, action, mods);
 }
@@ -94,7 +94,8 @@ void VulkanApp::initVulkan() {
 	m_swapchain.init(&m_context, m_window);
 	m_renderPass.init(&m_context, &m_swapchain);
 
-	createCommandPools();
+	m_commandManager.init(&m_context, g_max_frames_in_flight);
+
 	createUniformBuffer();
 
 	createTextureImage();
@@ -108,47 +109,14 @@ void VulkanApp::initVulkan() {
 	createColorRessources();
 	createDepthResources();
 
-
 	loadMesh();
 	createMeshBuffer();
 
-	createCommandBuffers();
 	createSyncObjects();
 
     m_swapchain.createFrameBuffers(m_renderPass.get(), m_depthImageView, m_colorImageView);
 }
 
-void VulkanApp::createCommandPools() {
-	QueueFamilyIndices queueFamilyIndices = m_context.getQueueFamilies();
-
-	VkCommandPoolCreateInfo poolInfo{};
-	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	// VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, si on veut que les command buffers soit redefini souvent
-	// ca peut changer l'allocation de la mémoire pour le rendre plus rapide
-	// VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, on veut changer quelques command buffers individuellement
-	// sinon elle sont reset toutes ensemble sans ça
-	// ici on va record les commandes buffer (commandes pour dessiner dans l'image) pour la frame actuelle
-	// donc et on a pas besoin besoin de toucher aux autres donc on utilise VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
-	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-
-	if (vkCreateCommandPool(m_context.getDevice(), &poolInfo, nullptr, &m_commandPool) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create command pool!");
-	} else {
-		std::cout << "Command pool created" << '\n';
-	}
-
-	VkCommandPoolCreateInfo poolTransferInfo{};
-	poolTransferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolTransferInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-	poolTransferInfo.queueFamilyIndex = queueFamilyIndices.transferFamily.value();
-
-	if (vkCreateCommandPool(m_context.getDevice(), &poolTransferInfo, nullptr, &m_commandPoolTransfer) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create command pool!");
-	} else {
-		std::cout << "Command pool created" << '\n';
-	}
-}
 
 void VulkanApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
 
@@ -271,7 +239,7 @@ void VulkanApp::createUniformBuffer() {
 
 void VulkanApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
 
-	VkCommandBuffer commandBuffer = beginSingleTimeCommands(m_commandPoolTransfer);
+	VkCommandBuffer commandBuffer = m_commandManager.beginSingleTimeCommands(m_commandManager.getTransferCommandPool());
 	// commence a record sur la pool de transfer vu qu'on va copier des données
 
 	VkBufferCopy copyRegion{};
@@ -281,7 +249,7 @@ void VulkanApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize 
 	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 	// commande pour effectuer le transfer
 
-	endSingleTimeCommands(commandBuffer, m_commandPoolTransfer, m_context.getTransferQueue());
+	m_commandManager.endSingleTimeCommands(commandBuffer, m_commandManager.getTransferCommandPool(), m_context.getTransferQueue());
 }
 
 // on a besoin de combiner les besoin de notre app et les besoins de notre buffer
@@ -305,23 +273,7 @@ uint32_t VulkanApp::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags pr
 	throw std::runtime_error("failed to find suitable memory type!");
 }
 
-void VulkanApp::createCommandBuffers() {
 
-	m_commandBuffers.resize(g_max_frames_in_flight);
-
-	VkCommandBufferAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = m_commandPool;
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	//
-	allocInfo.commandBufferCount = m_commandBuffers.size();
-
-	if (vkAllocateCommandBuffers(m_context.getDevice(), &allocInfo, m_commandBuffers.data()) != VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate command buffers!");
-	} else {
-		std::cout << "Command buffer created" << '\n';
-	}
-}
 
 void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
 	// writes command qu'on veut execute
@@ -466,8 +418,8 @@ void VulkanApp::drawFrame() {
 	// sur la fence m_inFlightFences[m_currentFrame] et on sera bloqué par vkWaitForFences
 
 	// record un command buffer pour draw sur l'image
-	vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
-	recordCommandBuffer(m_commandBuffers[m_currentFrame], imageIndex);
+	vkResetCommandBuffer(m_commandManager.getCommandBuffers()[m_currentFrame], 0);
+	recordCommandBuffer(m_commandManager.getCommandBuffers()[m_currentFrame], imageIndex);
 
 	// submit l'image
 	VkSubmitInfo submitInfo{};
@@ -482,7 +434,7 @@ void VulkanApp::drawFrame() {
 	submitInfo.pWaitDstStageMask = waitStages;
 
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_commandBuffers[m_currentFrame];
+	submitInfo.pCommandBuffers = &m_commandManager.getCommandBuffers()[m_currentFrame];
 	// les buffers a submit pour execution
 
 	VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphores[m_currentFrame]};
@@ -585,8 +537,6 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 		vkFreeMemory(m_context.getDevice(), m_uniformBuffersMemory[i], nullptr);
 	}
 
-	//vkDestroyDescriptorPool(m_context.getDevice(), m_descriptorPool, nullptr);
-	//vkDestroyDescriptorSetLayout(m_context.getDevice(), m_descriptorSetLayout, nullptr);
 	vkDestroyBuffer(m_context.getDevice(), m_meshBuffer, nullptr);
 	vkFreeMemory(m_context.getDevice(), m_meshBufferMemory, nullptr);
 
@@ -595,10 +545,12 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 		vkDestroySemaphore(m_context.getDevice(), m_renderFinishedSemaphores[i], nullptr);
 		vkDestroyFence(m_context.getDevice(), m_inFlightFences[i], nullptr);
 	}
-	vkDestroyCommandPool(m_context.getDevice(), m_commandPoolTransfer, nullptr);
-	vkDestroyCommandPool(m_context.getDevice(), m_commandPool, nullptr);
+
+	m_commandManager.cleanup();
 
 	m_pipeline.cleanup();
+
+	m_descriptors.cleanup();
 
 	m_renderPass.cleanup();
 
@@ -690,15 +642,15 @@ void VulkanApp::createTextureImage() {
 
 	// modifier l'état de l'image en gros pour effectuer certaines opérations ici
 	// VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL pour copier les données
-	transitionImageLayout(m_commandPoolTransfer, m_context.getTransferQueue(), m_textureImage,
+	transitionImageLayout(m_commandManager.getTransferCommandPool(), m_context.getTransferQueue(), m_textureImage,
 			      VK_FORMAT_R8G8B8A8_SRGB, m_mipLevels,
 			      VK_IMAGE_LAYOUT_UNDEFINED /*on s'occupe pas de l'état precedent*/,
 			      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-	copyBufferToImage(m_commandPoolTransfer, m_context.getTransferQueue(), stagingBuffer, m_textureImage, texWidth, texHeight);
+	copyBufferToImage(m_commandManager.getTransferCommandPool(), m_context.getTransferQueue(), stagingBuffer, m_textureImage, texWidth, texHeight);
 
 	// une
-	generateMipmaps(m_commandPool, m_context.getGraphicsQueue(), m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, m_mipLevels);
+	generateMipmaps(m_commandManager.getCommandPool(), m_context.getGraphicsQueue(), m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, m_mipLevels);
 
 	vkDestroyBuffer(m_context.getDevice(), stagingBuffer, nullptr);
 	vkFreeMemory(m_context.getDevice(), stagingBufferMemory, nullptr);
@@ -753,49 +705,14 @@ void VulkanApp::createImage(uint32_t width, uint32_t height, VkFormat format, ui
 	vkBindImageMemory(m_context.getDevice(), image, imageMemory, 0);
 }
 
-// record et execute un command buffer
-VkCommandBuffer VulkanApp::beginSingleTimeCommands(VkCommandPool commandPool) {
-	VkCommandBufferAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandPool = commandPool;
-	allocInfo.commandBufferCount = 1;
 
-	VkCommandBuffer commandBuffer;
-	vkAllocateCommandBuffers(m_context.getDevice(), &allocInfo, &commandBuffer);
 
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-	vkBeginCommandBuffer(commandBuffer, &beginInfo);
-	return commandBuffer;
-}
-
-void VulkanApp::endSingleTimeCommands(VkCommandBuffer commandBuffer, VkCommandPool commandPool, VkQueue queue) {
-	vkEndCommandBuffer(commandBuffer);
-
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
-
-	vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
-	// envoie a la queue ce qu'on a record,
-	// on a pas a attendre, on veut lancer le transfert directement
-
-	vkQueueWaitIdle(queue);
-	// par contre on doit bien attendre que se soit fini, soit :
-	// on utilise des fences et on pourrait lancer plusieurs transferts en meme temps et attendre qu'ils aient tous fini
-	// soit on sait que le transfert est fini avec vkQueueWaitIdle
-
-	vkFreeCommandBuffers(m_context.getDevice(), commandPool, 1, &commandBuffer);
-}
 
 void VulkanApp::transitionImageLayout(VkCommandPool commandPool, VkQueue queue,
 				      VkImage image, VkFormat format, uint32_t mipLevels,
 				      VkImageLayout oldLayout, VkImageLayout newLayout) {
-	VkCommandBuffer commandBuffer = beginSingleTimeCommands(commandPool);
+	VkCommandBuffer commandBuffer = m_commandManager.beginSingleTimeCommands(commandPool);
 
 	VkImageMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -845,11 +762,11 @@ void VulkanApp::transitionImageLayout(VkCommandPool commandPool, VkQueue queue,
 			     0, nullptr,
 			     1, &barrier);
 
-	endSingleTimeCommands(commandBuffer, commandPool, queue);
+	m_commandManager.endSingleTimeCommands(commandBuffer, commandPool, queue);
 }
 
 void VulkanApp::copyBufferToImage(VkCommandPool commandPool, VkQueue queue, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-	VkCommandBuffer commandBuffer = beginSingleTimeCommands(commandPool);
+	VkCommandBuffer commandBuffer = m_commandManager.beginSingleTimeCommands(commandPool);
 
 	VkBufferImageCopy region{};
 	region.bufferOffset = 0;
@@ -869,7 +786,7 @@ void VulkanApp::copyBufferToImage(VkCommandPool commandPool, VkQueue queue, VkBu
 
 	vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-	endSingleTimeCommands(commandBuffer, commandPool, queue);
+	m_commandManager.endSingleTimeCommands(commandBuffer, commandPool, queue);
 }
 
 VkImageView VulkanApp::createImageView(VkImage image, VkFormat format, uint32_t mipLevels, VkImageAspectFlags aspectFlags) {
@@ -975,7 +892,7 @@ void VulkanApp::generateMipmaps(VkCommandPool commandPool, VkQueue queue, VkImag
 		throw std::runtime_error("texture image format does not support linear blitting!");
 	}
 
-	VkCommandBuffer commandBuffer = beginSingleTimeCommands(commandPool);
+	VkCommandBuffer commandBuffer = m_commandManager.beginSingleTimeCommands(commandPool);
 
 	VkImageMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -1060,7 +977,7 @@ void VulkanApp::generateMipmaps(VkCommandPool commandPool, VkQueue queue, VkImag
 			     0, nullptr,
 			     1, &barrier);
 
-	endSingleTimeCommands(commandBuffer, commandPool, queue);
+	m_commandManager.endSingleTimeCommands(commandBuffer, commandPool, queue);
 }
 
 

@@ -1,6 +1,12 @@
 [
 {
   "directory": "/home/mat/VulkanTutorial/build",
+  "command": "/usr/bin/g++ -I/home/mat/VulkanTutorial/include -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial -g -std=gnu++17 -o CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.o -c /home/mat/VulkanTutorial/src/Commands/CommandManager.cpp",
+  "file": "/home/mat/VulkanTutorial/src/Commands/CommandManager.cpp",
+  "output": "CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.o"
+},
+{
+  "directory": "/home/mat/VulkanTutorial/build",
   "command": "/usr/bin/g++ -I/home/mat/VulkanTutorial/include -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial -g -std=gnu++17 -o CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o -c /home/mat/VulkanTutorial/src/Core/SwapChain.cpp",
   "file": "/home/mat/VulkanTutorial/src/Core/SwapChain.cpp",
   "output": "CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o"

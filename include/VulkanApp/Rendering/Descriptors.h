@@ -21,15 +21,10 @@ class Descriptors {
 	VkDescriptorPool getPool() { return m_pool; };
 	std::vector<VkDescriptorSet>& getSets() { return m_sets; };
 
-
       private:
-
 	void createSetLayout();
-	void createPool(const uint32_t max_frames_in_flight);
-	void createSets( const uint32_t max_frames_in_flight, 
-								const std::vector<VkBuffer>& uniformBuffers,
-								VkImageView textureImageView,
-								VkSampler textureSampler);
+	void createPool( const uint32_t max_frames_in_flight );
+	void createSets( const uint32_t max_frames_in_flight, const std::vector<VkBuffer>& uniformBuffers, VkImageView textureImageView, VkSampler textureSampler );
 
 	VulkanContext* m_context = nullptr;
 

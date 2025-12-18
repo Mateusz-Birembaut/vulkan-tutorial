@@ -15,8 +15,11 @@ void Descriptors::init(VulkanContext* context, const uint32_t max_frames_in_flig
 };
 
 void Descriptors::cleanup() noexcept{
-	vkDestroyDescriptorPool(m_context->getDevice(), m_pool, nullptr);
-	vkDestroyDescriptorSetLayout(m_context->getDevice(), m_setLayout, nullptr);
+	if (m_context && m_context->getDevice() != VK_NULL_HANDLE) {
+		VkDevice device = m_context->getDevice();
+		if (m_pool != VK_NULL_HANDLE) vkDestroyDescriptorPool(device, m_pool, nullptr);
+		if (m_setLayout != VK_NULL_HANDLE) vkDestroyDescriptorSetLayout(device, m_setLayout, nullptr);
+	}
 };
 
 /// @brief Creates set layout for mvp matrix in vertax stage and 2d sampler for textures in fragment stage

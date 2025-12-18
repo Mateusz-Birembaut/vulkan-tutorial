@@ -5,6 +5,7 @@ cmake_policy(SET CMP0009 NEW)
 # SOURCES at CMakeLists.txt:16 (file)
 file(GLOB_RECURSE NEW_GLOB LIST_DIRECTORIES false "/home/mat/VulkanTutorial/src/*.cpp")
 set(OLD_GLOB
+  "/home/mat/VulkanTutorial/src/Commands/CommandManager.cpp"
   "/home/mat/VulkanTutorial/src/Core/SwapChain.cpp"
   "/home/mat/VulkanTutorial/src/Core/VulkanContext.cpp"
   "/home/mat/VulkanTutorial/src/Core/VulkanDebug.cpp"

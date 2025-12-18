@@ -8,6 +8,7 @@
 #include <VulkanApp/Rendering/Pipeline.h>
 #include <VulkanApp/Rendering/RenderPass.h>
 #include <VulkanApp/Rendering/Descriptors.h>
+#include <VulkanApp/Commands/CommandManager.h>
 
 #include <VulkanApp/Resources/Mesh.h>
 
@@ -64,6 +65,7 @@ class VulkanApp {
 		Pipeline m_pipeline;
 		RenderPass m_renderPass;
 		Descriptors m_descriptors;
+		CommandManager m_commandManager;
 
 		Camera m_camera{};
 
@@ -76,7 +78,8 @@ class VulkanApp {
 
 	//void createGraphicsPipeline();
 	//void createFrameBuffers();
-	void createCommandPools();
+	//void createCommandPools();
+	
 	void createColorRessources();
 	void createDepthResources();
 	void createTextureImage();
@@ -90,8 +93,7 @@ class VulkanApp {
 	void loadMesh();
 	void createMeshBuffer();
 
-	void createGraphicsCommandBuffers();
-	void createTransferCommandBuffer();
+
 	void createSyncObjects();
 
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
@@ -99,11 +101,11 @@ class VulkanApp {
 	void createImage(uint32_t width, uint32_t height, VkFormat format, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkSharingMode sharingMode, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 	void copyBufferToImage(VkCommandPool commandPool, VkQueue queue, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
-	void createCommandBuffers();
+	//void createCommandBuffers();
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
-	VkCommandBuffer beginSingleTimeCommands(VkCommandPool commandPool);
-	void endSingleTimeCommands(VkCommandBuffer commandBuffer, VkCommandPool commandPool, VkQueue queue);
+	//VkCommandBuffer beginSingleTimeCommands(VkCommandPool commandPool);
+	//void endSingleTimeCommands(VkCommandBuffer commandBuffer, VkCommandPool commandPool, VkQueue queue);
 	void transitionImageLayout(VkCommandPool commandPool, VkQueue queue, VkImage image, VkFormat format, uint32_t mipLevels, VkImageLayout oldLayout, VkImageLayout newLayout);
 
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags propreties);
@@ -149,8 +151,7 @@ class VulkanApp {
 /* 	VkPipelineLayout m_pipelineLayout;
 	VkPipeline m_graphicsPipeline; */
 
-	VkCommandPool m_commandPool;
-	VkCommandPool m_commandPoolTransfer;
+
 
 	Mesh m_mesh;
 	VkBuffer m_meshBuffer; // combine vertices et indices, c'est ce qui est recommandé
@@ -177,7 +178,7 @@ class VulkanApp {
 
 	//std::vector<VkFramebuffer> m_swapChainFrameBuffers;
 
-	std::vector<VkCommandBuffer> m_commandBuffers;
+
 
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;
@@ -194,8 +195,8 @@ class VulkanApp {
 	VkDeviceMemory m_colorImageMemory;
 	VkImageView m_colorImageView;
 
-	VkSampleCountFlagBits m_msaaSamples;
-	VkSampleCountFlagBits getMaxMsaa();
+	//VkSampleCountFlagBits m_msaaSamples;
+	//VkSampleCountFlagBits getMaxMsaa();
 
 
 

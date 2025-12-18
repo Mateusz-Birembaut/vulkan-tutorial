@@ -1,3 +1,5 @@
 /home/mat/VulkanTutorial/build/CMakeFiles/VulkanTutorial.dir
+/home/mat/VulkanTutorial/build/CMakeFiles/run.dir
+/home/mat/VulkanTutorial/build/CMakeFiles/run-fps.dir
 /home/mat/VulkanTutorial/build/CMakeFiles/edit_cache.dir
 /home/mat/VulkanTutorial/build/CMakeFiles/rebuild_cache.dir

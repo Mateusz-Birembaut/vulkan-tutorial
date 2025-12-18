@@ -30,3 +30,15 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan::Vulkan
     glfw
 )
+
+# Convenience targets to run the built executable from the build directory
+add_custom_target(run
+    COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_BINARY_DIR} $<TARGET_FILE:${PROJECT_NAME}>
+    DEPENDS ${PROJECT_NAME}
+)
+
+# Run with MangoHud to display FPS on Linux
+add_custom_target(run-fps
+    COMMAND ${CMAKE_COMMAND} -E env MANGOHUD=1 $<TARGET_FILE:${PROJECT_NAME}>
+    DEPENDS ${PROJECT_NAME}
+)

@@ -120,8 +120,6 @@ class VulkanApp {
 
 
 	Mesh m_mesh;
-	Buffer m_mBuffer;
-	VkDeviceSize m_indicesOffset;
 
 	VkImage m_depthImage;
 	VkDeviceMemory m_depthImageMemory;
@@ -168,8 +166,6 @@ class VulkanApp {
 	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 	void onKey(int key, int scancode, int action, int mods);
 
-	// DEBUG
-	void setObjectName(VkBuffer buffer, const char* name);
 };
 
 #endif // VULKAN_APP_H

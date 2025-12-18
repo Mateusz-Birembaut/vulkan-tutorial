@@ -7,13 +7,10 @@
 #include <VulkanApp/VulkanApp.h>
 
 #include <VulkanApp/Core/VulkanContext.h>
-
+#include <VulkanApp/Utils/Utility.h>
 #include <VulkanApp/Resources/Buffer.h>
 #include <VulkanApp/Utils/Uniforms.h>
 
-
-#include "Utility.h"
-#include "Vertex.h"
 #include "stb_image.h"
 #include "tiny_obj_loader.h"
 
@@ -110,43 +107,14 @@ void VulkanApp::initVulkan() {
 	createColorRessources();
 	createDepthResources();
 
-	loadMesh();
-	createMeshBuffer();
+	
+	m_mesh.init(&m_context, &m_commandManager , g_model_path);
 
 	createSyncObjects();
 
     m_swapchain.createFrameBuffers(m_renderPass.get(), m_depthImageView, m_colorImageView);
 }
 
-
-void VulkanApp::createMeshBuffer() {
-	VkDeviceSize verticesSize = m_mesh.vertexSize() * m_mesh.verticesCount();
-	VkDeviceSize indicesSize = m_mesh.indexSize() * m_mesh.indicesCount();
-
-	// je dois avoir la fin du buffer aligné (un miltiple de ...)
-	// comme j'ai des indices uint16, je dois avoir une size multiple de 2
-	// formule pour aligner au multiple :
-	// aligned = ((operand + (alignment - 1)) & ~(alignment - 1)) voir utility.h
-	// m_indicesOffset = AlignTo(verticesSize, 2);
-	// align 16
-	m_indicesOffset = AlignTo(verticesSize, 4);
-	VkDeviceSize bufferSize = m_indicesOffset + indicesSize;
-
-
-	Buffer stagingBuffer;
-	stagingBuffer.init(&m_context, &m_commandManager, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_SHARING_MODE_CONCURRENT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	setObjectName(stagingBuffer.get(), "MeshStagingBuffer");
-	stagingBuffer.write(m_mesh.verticesData(), verticesSize, 0);
-	stagingBuffer.write(m_mesh.indicesData(), indicesSize, m_indicesOffset);
-	stagingBuffer.unmap();
-
-	m_mBuffer.init(&m_context, &m_commandManager, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_SHARING_MODE_CONCURRENT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-	setObjectName(m_mBuffer.get(), "MeshBuffer");
-
-	stagingBuffer.copyTo(m_mBuffer.get(), bufferSize);
-	stagingBuffer.cleanup();
-}
 
 // uniform buffers are persistent so we keep the buffer map
 void VulkanApp::createUniformBuffer() {
@@ -157,7 +125,7 @@ void VulkanApp::createUniformBuffer() {
 	for (int i{0}; i < g_max_frames_in_flight; ++i) {
 		Buffer& uniformBuffer = m_uniformBuffers[i];
 		uniformBuffer.init(&m_context, &m_commandManager ,bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		setObjectName(m_uniformBuffers[i].get(), "UniformBuffer");
+		setBufferName(&m_context, m_uniformBuffers[i].get(), "UniformBuffer");
 		uniformBuffer.map();
 	}
 }
@@ -205,12 +173,12 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline.get());
 	// VK_PIPELINE_BIND_POINT_GRAPHICS, c'est une pipeline de rendu
-
-	VkBuffer vertexBuffers[]{m_mBuffer.get()};
+	auto meshBuffer = m_mesh.getBuffer().get();
+	VkBuffer vertexBuffers[]{meshBuffer};
 	VkDeviceSize offsets[]{0};
 
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, m_mBuffer.get(), m_indicesOffset, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(commandBuffer, meshBuffer, m_mesh.getIndicesOffset(), VK_INDEX_TYPE_UINT32);
 	// VK_INDEX_TYPE_UINT32 si on veut plus d'indices, mais dans ce cas modif vecteur d'indices aussi
 
 	// comme on a défini le viewport et scissor dynamiquement on doit les spécifier ici
@@ -424,8 +392,7 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 		m_uniformBuffers[i].cleanup();
 	}
 
-	m_mBuffer.cleanup();
-
+	m_mesh.cleanup();
 
 	for (size_t i = 0; i < g_max_frames_in_flight; i++) {
 		vkDestroySemaphore(m_context.getDevice(), m_imageAvailableSemaphores[i], nullptr);
@@ -469,19 +436,6 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage) {
 	// m_uniformBuffersMapped adresse accessible ou vont être stockées les données de l'ubo
 }
 
-
-void VulkanApp::setObjectName(VkBuffer buffer, const char* name) {
-	VkDebugUtilsObjectNameInfoEXT nameInfo{};
-	nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-	nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-	nameInfo.objectHandle = reinterpret_cast<uint64_t>(buffer);
-	nameInfo.pObjectName = name;
-	auto func = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(m_context.getDevice(), "vkSetDebugUtilsObjectNameEXT");
-	if (func)
-		func(m_context.getDevice(), &nameInfo);
-}
-
-
 void VulkanApp::createTextureImage() {
 	int texWidth;
 	int texHeight;
@@ -505,7 +459,7 @@ void VulkanApp::createTextureImage() {
 	    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
 
-	setObjectName(stagingBuffer.get(), "ImageStagingBuffer");
+	setBufferName(&m_context, stagingBuffer.get(), "ImageStagingBuffer");
 
 	stagingBuffer.map();
 	stagingBuffer.write(pixels, imgSize, 0);
@@ -760,10 +714,6 @@ void VulkanApp::createDepthResources() {
 		    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_depthImage, m_depthImageMemory);
 
 	m_depthImageView = createImageView(m_depthImage, depthFormat, 1, VK_IMAGE_ASPECT_DEPTH_BIT);
-}
-
-void VulkanApp::loadMesh() {
-	m_mesh.loadMesh(g_model_path);
 }
 
 void VulkanApp::generateMipmaps(VkCommandPool commandPool, VkQueue queue, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {

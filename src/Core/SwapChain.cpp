@@ -21,29 +21,34 @@ void SwapChain::init(VulkanContext* context, GLFWwindow* window) {
 /// @brief Recreates the swapchain and its image views and frame buffers, recreation of frame buffers not called here
 /// @param window
 void SwapChain::recreate(GLFWwindow* window) {
-	cleanup();
 	create(window);
 	createImageViews();
 }
 
 /// @brief Destroyes the frame buffers, the image views then the swapchain
 void SwapChain::cleanup() {
-	VkDevice device = m_context->getDevice();
+	if(m_context){
+		VkDevice device = m_context->getDevice();
 
-	cleanupFramebuffers();
+		cleanupFramebuffers();
 
-	for (auto imageView : m_imageViews) {
-		vkDestroyImageView(device, imageView, nullptr);
+		for (auto imageView : m_imageViews) {
+			if(imageView != VK_NULL_HANDLE) vkDestroyImageView(device, imageView, nullptr);
+		}
+		std::vector<VkImageView>().swap(m_imageViews);
+
+		if(m_swapChain != VK_NULL_HANDLE) vkDestroySwapchainKHR(device, m_swapChain, nullptr);
+
+		m_swapChain = VK_NULL_HANDLE;
 	}
 
-	vkDestroySwapchainKHR(device, m_swapChain, nullptr);
 }
 
 void SwapChain::cleanupFramebuffers() {
     for (auto framebuffer : m_frameBuffers) {
-        vkDestroyFramebuffer(m_context->getDevice(), framebuffer, nullptr);
+		if(framebuffer != VK_NULL_HANDLE) vkDestroyFramebuffer(m_context->getDevice(), framebuffer, nullptr);
     }
-    m_frameBuffers.clear();
+	std::vector<VkFramebuffer>().swap(m_frameBuffers);
 }
 
 /// @brief Gives a color format for the swapchain images

@@ -127,7 +127,7 @@ void VulkanApp::createUniformBuffer() {
 }
 
 
-void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+void VulkanApp::recordRenderCommands(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
 	// writes command qu'on veut execute
 
 	VkCommandBufferBeginInfo beginInfo{};
@@ -252,7 +252,7 @@ void VulkanApp::drawFrame() {
 
 	// record un command buffer pour draw sur l'image
 	vkResetCommandBuffer(m_commandManager.getCommandBuffers()[m_currentFrame], 0);
-	recordCommandBuffer(m_commandManager.getCommandBuffers()[m_currentFrame], imageIndex);
+	recordRenderCommands(m_commandManager.getCommandBuffers()[m_currentFrame], imageIndex);
 
 	// submit l'image
 	VkSubmitInfo submitInfo{};
@@ -320,28 +320,24 @@ void VulkanApp::drawFrame() {
 void VulkanApp::cleanupSwapChain() {
 
 	m_swapchain.cleanup();
-
 	m_color.cleanup();
 	m_depth.cleanup();
-
 }
+
 
 void VulkanApp::recreateSwapChain() {
 	int width = 0;
 	int height = 0;
 	glfwGetFramebufferSize(m_window, &width, &height);
-	while (width == 0 || height == 0) {
+	while (width == 0 || height == 0) { // wait while minimized
 		glfwGetFramebufferSize(m_window, &width, &height);
 		glfwWaitEvents();
 	}
-	// quand on est minimiser width et height sont a 0, tant que c'est le cas,
-	//  on fait rien, boucle infini, tant qu'on a pas re ouvert
 
 	vkDeviceWaitIdle(m_context.getDevice());
+	cleanupSwapChain();
 
 	m_swapchain.recreate(m_window);
-
-	// les images views doivent etre recrée car sont lies au dimensions des images de la swapchain
 	m_color = Image::createColorAttachment(&m_context, m_swapchain);
 	m_depth = Image::createDepthAttachment(&m_context, m_swapchain, m_renderPass);
 
@@ -384,25 +380,18 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage) {
 	float time{std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count()};
 
 	UniformBufferObject ubo{};
-	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-	// rotation avec le temps qui passe sur l'éxe y
+	ubo.model = glm::mat4(1.0f);
 
 	ubo.view = m_camera.getViewMatrix();
-	// caméra en hauter et qui regarde en 0,0,0, up de la camera en 0,0,1
 
-	ubo.proj = glm::perspective(glm::radians(45.0f), m_swapchain.getExtent().width / static_cast<float>(m_swapchain.getExtent().height), 0.1f, 10.0f);
-	// camera d'un fov de 45, avec la taille = a celle de nos images et un near plan à 0.1F et far a 10.0f
 
-	ubo.proj[1][1] *= -1; // car glm pour OpenGL et l'axe y est inversé par rapport a vulkan
+	ubo.proj = glm::perspective(glm::radians(45.0f), m_swapchain.getExtent().width / static_cast<float>(m_swapchain.getExtent().height), 0.1f, 100.0f);
+
+	ubo.proj[1][1] *= -1; // glm for opengl and y axis is inverted
 
 	memcpy(m_uniformBuffers[currentImage].getMapped(), &ubo, sizeof(ubo));
-	// m_uniformBuffersMapped adresse accessible ou vont être stockées les données de l'ubo
+
 }
 
 
-
-bool VulkanApp::hasStencilComponent(VkFormat format) {
-	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
-}
 

@@ -1,6 +1,7 @@
 #include <VulkanApp/Sync/SyncObjects.h>
 
 #include <iostream>
+#include <algorithm>
 
 void SyncObjects::init(VulkanContext* context, uint32_t max_frames_in_flight){
 	m_context = context;
@@ -10,13 +11,26 @@ void SyncObjects::init(VulkanContext* context, uint32_t max_frames_in_flight){
 void SyncObjects::cleanup() noexcept {
 	if(m_context){
 		auto device = m_context->getDevice();
-		for (size_t i = 0; i < m_imageAvailableSemaphores.size(); i++) {
-			if(m_imageAvailableSemaphores[i] != VK_NULL_HANDLE){
+		auto count = std::max({m_imageAvailableSemaphores.size(), m_renderFinishedSemaphores.size(), m_inFlightFences.size()});
+		for (size_t i = 0; i < count; ++i) {
+			if (i < m_imageAvailableSemaphores.size() && m_imageAvailableSemaphores[i] != VK_NULL_HANDLE) {
 				vkDestroySemaphore(device, m_imageAvailableSemaphores[i], nullptr);
+				m_imageAvailableSemaphores[i] = VK_NULL_HANDLE;
+			}
+			if (i < m_renderFinishedSemaphores.size() && m_renderFinishedSemaphores[i] != VK_NULL_HANDLE) {
 				vkDestroySemaphore(device, m_renderFinishedSemaphores[i], nullptr);
+				m_renderFinishedSemaphores[i] = VK_NULL_HANDLE;
+			}
+			if (i < m_inFlightFences.size() && m_inFlightFences[i] != VK_NULL_HANDLE) {
 				vkDestroyFence(device, m_inFlightFences[i], nullptr);
+				m_inFlightFences[i] = VK_NULL_HANDLE;
 			}
 		}
+
+		std::vector<VkSemaphore>().swap(m_imageAvailableSemaphores);
+		std::vector<VkSemaphore>().swap(m_renderFinishedSemaphores);
+		std::vector<VkFence>().swap(m_inFlightFences);
+		m_context = nullptr;
 	}
 }
 

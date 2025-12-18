@@ -20,8 +20,14 @@ void CommandManager::cleanup() noexcept{
 			vkFreeCommandBuffers(device, m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
 			m_commandBuffers.clear();
 		}
-		if(m_commandPool != VK_NULL_HANDLE) vkDestroyCommandPool(device, m_commandPool, nullptr);
-		if(m_commandPoolTransfer != VK_NULL_HANDLE && m_commandPoolTransfer != m_commandPool) vkDestroyCommandPool(device, m_commandPoolTransfer, nullptr);
+		if(m_commandPool != VK_NULL_HANDLE) {
+			vkDestroyCommandPool(device, m_commandPool, nullptr);
+			m_commandPool = VK_NULL_HANDLE;
+		}
+		if(m_commandPoolTransfer != VK_NULL_HANDLE && m_commandPoolTransfer != m_commandPool) {
+			vkDestroyCommandPool(device, m_commandPoolTransfer, nullptr);
+			m_commandPoolTransfer = VK_NULL_HANDLE;
+		}
 	}
 }
 

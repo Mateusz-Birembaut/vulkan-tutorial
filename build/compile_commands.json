@@ -25,6 +25,12 @@
 },
 {
   "directory": "/home/mat/VulkanTutorial/build",
+  "command": "/usr/bin/g++ -I/home/mat/VulkanTutorial/include -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial -g -std=gnu++17 -o CMakeFiles/VulkanTutorial.dir/src/Renderer.cpp.o -c /home/mat/VulkanTutorial/src/Renderer.cpp",
+  "file": "/home/mat/VulkanTutorial/src/Renderer.cpp",
+  "output": "CMakeFiles/VulkanTutorial.dir/src/Renderer.cpp.o"
+},
+{
+  "directory": "/home/mat/VulkanTutorial/build",
   "command": "/usr/bin/g++ -I/home/mat/VulkanTutorial/include -I/home/mat/VulkanTutorial/src -I/home/mat/VulkanTutorial -g -std=gnu++17 -o CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.o -c /home/mat/VulkanTutorial/src/Rendering/Descriptors.cpp",
   "file": "/home/mat/VulkanTutorial/src/Rendering/Descriptors.cpp",
   "output": "CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.o"

@@ -15,6 +15,7 @@ set(OLD_GLOB
   "/home/mat/VulkanTutorial/src/Resources/Buffer.cpp"
   "/home/mat/VulkanTutorial/src/Resources/Image.cpp"
   "/home/mat/VulkanTutorial/src/Resources/Mesh.cpp"
+  "/home/mat/VulkanTutorial/src/Sync/SyncObjects.cpp"
   "/home/mat/VulkanTutorial/src/VulkanApp.cpp"
   "/home/mat/VulkanTutorial/src/main.cpp"
   )

@@ -106,7 +106,7 @@ void VulkanApp::initVulkan() {
 
 	m_mesh.init(&m_context, &m_commandManager , g_model_path);
 
-	createSyncObjects();
+	m_syncObjects.init(&m_context, g_max_frames_in_flight);
 
     m_swapchain.createFrameBuffers(m_renderPass.get(), m_depth.getView(), m_color.getView());
 }
@@ -215,39 +215,20 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	}
 }
 
-void VulkanApp::createSyncObjects() {
-
-	m_imageAvailableSemaphores.resize(g_max_frames_in_flight);
-	m_renderFinishedSemaphores.resize(g_max_frames_in_flight);
-	m_inFlightFences.resize(g_max_frames_in_flight);
-
-	VkSemaphoreCreateInfo semaphoreInfo{};
-	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-	VkFenceCreateInfo fenceInfo{};
-	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; // créer en signaled,
-	// car sinon on attend a l'infini car pour la 1ere  frame on attend de terminer de draw sauf qu'on draw pas
-
-	for (size_t i = 0; i < g_max_frames_in_flight; i++) {
-		if (vkCreateSemaphore(m_context.getDevice(), &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]) != VK_SUCCESS ||
-		    vkCreateSemaphore(m_context.getDevice(), &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]) != VK_SUCCESS ||
-		    vkCreateFence(m_context.getDevice(), &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create semaphores!");
-		}
-	}
-	std::cout << "Sync objects created" << '\n';
-}
 
 void VulkanApp::drawFrame() {
 	// attendre frame precedente fini
-	vkWaitForFences(m_context.getDevice(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX); // bloque le cpu (host)
+	auto flightFence =  m_syncObjects.getInFlightFences()[m_currentFrame];
+	auto imgSemaphore = m_syncObjects.getImgAvailableSemaphores()[m_currentFrame];
+	auto renderSemaphore = m_syncObjects.getRenderFinishedSemaphores()[m_currentFrame];
+
+	vkWaitForFences(m_context.getDevice(), 1, &flightFence, VK_TRUE, UINT64_MAX); // bloque le cpu (host)
 	// prend un array de fence, ici 1 seule, VK_TRUE, on attend toutes les fences
 	// UINT64_MAX en gros desactive le timeout tellement c grand
 
 	// prendre une image de la swapchain
 	uint32_t imageIndex; // index de la vkimagedans le swap chain images
-	VkResult result = vkAcquireNextImageKHR(m_context.getDevice(), m_swapchain.getSwapChain(), UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(m_context.getDevice(), m_swapchain.getSwapChain(), UINT64_MAX, imgSemaphore, VK_NULL_HANDLE, &imageIndex);
 	// m_imageAvailableSemaphore signaled quand on a fini
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -264,7 +245,7 @@ void VulkanApp::drawFrame() {
 
 	updateUniformBuffer(m_currentFrame);
 
-	vkResetFences(m_context.getDevice(), 1, &m_inFlightFences[m_currentFrame]); // on débloque l'éxécution manuellement, ici pour eviter deadlock
+	vkResetFences(m_context.getDevice(), 1, &m_syncObjects.getInFlightFences()[m_currentFrame]); // on débloque l'éxécution manuellement, ici pour eviter deadlock
 	// on est sur d'avoir une image a draw
 	// si on reset et que recreate swap chain est appelé, alors on sera toujours
 	// sur la fence m_inFlightFences[m_currentFrame] et on sera bloqué par vkWaitForFences
@@ -277,7 +258,7 @@ void VulkanApp::drawFrame() {
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	VkSemaphore waitSemaphores[]{m_imageAvailableSemaphores[m_currentFrame]};
+	VkSemaphore waitSemaphores[]{imgSemaphore};
 	VkPipelineStageFlags waitStages[]{VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 	// on veut attendre au niveau de l'écriture dans le frame buffer
 	// ca veut dire que le gpu peut executer des shaders juste on écrit pas encore
@@ -289,12 +270,12 @@ void VulkanApp::drawFrame() {
 	submitInfo.pCommandBuffers = &m_commandManager.getCommandBuffers()[m_currentFrame];
 	// les buffers a submit pour execution
 
-	VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphores[m_currentFrame]};
+	VkSemaphore signalSemaphores[] = {renderSemaphore};
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 	// on va signal ce sémaphore apres que le command buffer soit executé
 
-	if (vkQueueSubmit(m_context.getGraphicsQueue(), 1, &submitInfo, m_inFlightFences[m_currentFrame]) != VK_SUCCESS) {
+	if (vkQueueSubmit(m_context.getGraphicsQueue(), 1, &submitInfo, flightFence) != VK_SUCCESS) {
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
 
@@ -381,11 +362,7 @@ void VulkanApp::cleanup() {	    // les queues sont détruites implicitement
 
 	m_mesh.cleanup();
 
-	for (size_t i = 0; i < g_max_frames_in_flight; i++) {
-		vkDestroySemaphore(m_context.getDevice(), m_imageAvailableSemaphores[i], nullptr);
-		vkDestroySemaphore(m_context.getDevice(), m_renderFinishedSemaphores[i], nullptr);
-		vkDestroyFence(m_context.getDevice(), m_inFlightFences[i], nullptr);
-	}
+	m_syncObjects.cleanup();
 
 	m_commandManager.cleanup();
 

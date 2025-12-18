@@ -9,6 +9,7 @@
 #include <VulkanApp/Commands/CommandManager.h>
 #include <VulkanApp/Resources/Buffer.h>
 #include <VulkanApp/Resources/Image.h>
+#include <VulkanApp/Sync/SyncObjects.h>
 
 #include <VulkanApp/Resources/Mesh.h>
 
@@ -65,6 +66,8 @@ class VulkanApp {
 		Descriptors m_descriptors;
 		CommandManager m_commandManager;
 
+		SyncObjects m_syncObjects;
+
 		std::vector<Buffer> m_uniformBuffers;
 
 		Mesh m_mesh;
@@ -99,11 +102,6 @@ class VulkanApp {
 	void cleanupSwapChain();
 
 	bool hasStencilComponent(VkFormat format);
-
-	std::vector<VkSemaphore> m_imageAvailableSemaphores;
-	std::vector<VkSemaphore> m_renderFinishedSemaphores;
-
-	std::vector<VkFence> m_inFlightFences;
 
 	int m_currentFrame{0};
 

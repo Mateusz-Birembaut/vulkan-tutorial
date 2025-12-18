@@ -41,7 +41,7 @@ Image Image::createTextureFromFile(VulkanContext* context, CommandManager* cmdMa
 
 	uint32_t mipLevels = 1;
 	if (genMipMap) {
-		mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight))));
+		mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 	}
 
 	Buffer staging;

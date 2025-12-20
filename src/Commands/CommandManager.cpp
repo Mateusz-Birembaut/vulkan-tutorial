@@ -28,6 +28,11 @@ void CommandManager::cleanup() noexcept{
 			vkDestroyCommandPool(device, m_commandPoolTransfer, nullptr);
 			m_commandPoolTransfer = VK_NULL_HANDLE;
 		}
+		if(m_commandPoolCompute != VK_NULL_HANDLE && m_commandPoolCompute != m_commandPool) {
+			vkDestroyCommandPool(device, m_commandPoolCompute, nullptr);
+			m_commandPoolCompute = VK_NULL_HANDLE;
+		}
+
 	}
 }
 
@@ -38,41 +43,49 @@ void CommandManager::createCommandPools() {
 
 	if(!queueFamilyIndices.graphicsFamily.has_value()) throw std::runtime_error("could not get a graphics queue");
 
-	if(queueFamilyIndices.graphicsFamily == queueFamilyIndices.transferFamily){
-		VkCommandPoolCreateInfo poolInfo{};
-		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-		if (vkCreateCommandPool(m_context->getDevice(), &poolInfo, nullptr, &m_commandPool) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create command pool!");
-		} else {
-			std::cout << "Command pool created" << '\n';
-			m_commandPoolTransfer = m_commandPool;
-		}
-	}else {
-		VkCommandPoolCreateInfo poolInfo{};
-		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-		if (vkCreateCommandPool(m_context->getDevice(), &poolInfo, nullptr, &m_commandPool) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create command pool!");
-		} else {
-			std::cout << "command pool created" << '\n';
-		}
+    if (vkCreateCommandPool(m_context->getDevice(), &poolInfo, nullptr, &m_commandPool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create graphics command pool!");
+    } else {
+        std::cout << "Graphics command pool created" << '\n';
+    }
 
+	if (queueFamilyIndices.transferFamily.has_value() && queueFamilyIndices.transferFamily.value() == queueFamilyIndices.graphicsFamily.value()) {
+		m_commandPoolTransfer = m_commandPool;
+	} else if (queueFamilyIndices.transferFamily.has_value()) {
 		VkCommandPoolCreateInfo poolTransferInfo{};
 		poolTransferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		poolTransferInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+		poolTransferInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT; 
 		poolTransferInfo.queueFamilyIndex = queueFamilyIndices.transferFamily.value();
 
 		if (vkCreateCommandPool(m_context->getDevice(), &poolTransferInfo, nullptr, &m_commandPoolTransfer) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create command pool!");
+			throw std::runtime_error("failed to create transfer command pool!");
 		} else {
-			std::cout << "Transfer command pool created" << '\n';
+			std::cout << "Transfer command pool created (Dedicated)" << '\n';
 		}
 	}
+
+	if (queueFamilyIndices.computeFamily.has_value() && 
+        queueFamilyIndices.computeFamily.value() == queueFamilyIndices.graphicsFamily.value()) {
+        m_commandPoolCompute = m_commandPool; 
+        std::cout << "Compute pool shares Graphics pool" << '\n';
+    } else if (queueFamilyIndices.computeFamily.has_value()) {
+        VkCommandPoolCreateInfo poolComputeInfo{};
+        poolComputeInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        poolComputeInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; 
+        poolComputeInfo.queueFamilyIndex = queueFamilyIndices.computeFamily.value();
+
+        if (vkCreateCommandPool(m_context->getDevice(), &poolComputeInfo, nullptr, &m_commandPoolCompute) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create compute command pool!");
+        } else {
+            std::cout << "Compute command pool created (Dedicated)" << '\n';
+        }
+    }
 }
 
 void CommandManager::createCommandBuffers(const uint32_t max_frames_in_flight) {

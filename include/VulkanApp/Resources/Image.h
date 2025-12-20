@@ -18,7 +18,8 @@ public:
 	static Image createColorAttachment(VulkanContext* context, const SwapChain& swapchain);
 	static Image createDepthAttachment(VulkanContext* context, const SwapChain& swapchain, const RenderPass& renderPass);
 	static Image createTextureFromFile(VulkanContext* context, CommandManager* cmdManager, const std::string& path, bool createSampler = true, bool genMipMap = true);
-
+	static Image createImageStorage(VulkanContext* context, CommandManager* cmdManager, const SwapChain& swapchain);
+	
 	Image(const Image&) = delete;
 	Image& operator=(const Image&) = delete;
 	Image(Image&& other) noexcept {
@@ -62,9 +63,8 @@ private:
 	
 	void generateMipmaps(CommandManager* cmdManager, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
-	void transitionImageLayout(CommandManager* cmdManager, VkImage image, VkFormat format, uint32_t mipLevels, VkImageLayout oldLayout, VkImageLayout newLayout);
+	void transitionImageLayout(CommandManager* cmdManager, VkCommandPool pool, VkQueue queue, VkImage image, VkFormat format, uint32_t mipLevels, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void copyBufferToImage(CommandManager* cmdManager, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-
 
 	VulkanContext* m_context = nullptr;
 

@@ -10,8 +10,10 @@
 #include <VulkanApp/Resources/Buffer.h>
 #include <VulkanApp/Resources/Image.h>
 #include <VulkanApp/Sync/SyncObjects.h>
-
+#include <VulkanApp/RayTracing/Objects/Sphere.h>
 #include <VulkanApp/Resources/Mesh.h>
+#include <VulkanApp/Rendering/ComputeDescriptor.h>
+#include <VulkanApp/Rendering/ComputePipeline.h>
 
 #include "Camera.h"
 
@@ -57,30 +59,51 @@ class VulkanApp {
 
 	VulkanContext m_context;
 	SwapChain m_swapchain;
-	Pipeline m_pipeline;
-	RenderPass m_renderPass;
-	Descriptors m_descriptors;
-	CommandManager m_commandManager;
-
-	SyncObjects m_syncObjects;
-
+	ComputePipeline m_compPipeline;
+	ComputeDescriptor m_compDescriptor;
+	
+	std::vector<Sphere> m_spheres;
+	std::vector<Buffer> m_sphereSSBOs; 
+	std::vector<Image> m_storageImages;
 	std::vector<Buffer> m_uniformBuffers;
 
+/* 	
+	Rasterization
+	Pipeline m_pipeline;
+	Pipeline m_computePipeline;
+	RenderPass m_renderPass;
+	Descriptors m_descriptors; 
+
 	Mesh m_mesh;
+	std::vector<Buffer> m_uniformBuffers;
 
 	Image m_color;
 	Image m_depth;
 	Image m_texture;
 
+*/
+	CommandManager m_commandManager;
+
+	SyncObjects m_syncObjects;
+
 	Camera m_camera{};
+
+	bool m_useCompute;
 
 	void initWindow();
 	void initVulkan();
 
+	void createUniformBuffer(uint32_t max_frames_in_flight);
+	void createSphereSSBOs(uint32_t max_frames_in_flight);
+	void createImageStorage(uint32_t max_frames_in_flight);
+
+	void insertImageBarrier(VkCommandBuffer cmd, VkImage image, VkAccessFlags srcAccess, VkAccessFlags dstAccess, VkImageLayout oldLayout, VkImageLayout newLayout, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage);
+
+	void recordCommands(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
 	void recreateSwapChain();
 	void cleanupSwapChain();
 
-	void createUniformBuffer();
 	void updateUniformBuffer(uint32_t currentFrame);
 
 	void recordRenderCommands(VkCommandBuffer commandBuffer, uint32_t imageIndex);

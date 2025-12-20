@@ -1,0 +1,125 @@
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(binding = 0) uniform CameraUBO {
+    mat4 viewProjInv;
+	vec4 position;
+	vec4 direction;
+    float fov;
+	float aspectRatio;
+	float near;
+	float far;
+} ubo;
+
+struct Sphere {
+	vec4 geometry;     
+    vec4 materialInfo;
+};
+
+layout(std430, binding = 1) buffer SphereSSBO {
+    Sphere spheres[];
+};
+
+layout(binding = 2, rgba8) uniform writeonly image2D resultImage;
+
+struct Ray{
+    vec3 origin;
+    vec3 direction;
+};
+
+struct Intersection{
+    vec3 position;
+    vec3 normal;
+    vec3 color;
+    float m_index;
+    float t1;
+    float t2;
+    bool hit;
+};
+
+const float BIAS = 0.001;
+const float FLT_MAX = 3.4028235e+38;
+const vec3 BACKGROUND_COLOR = vec3(0.0, 0.0, 0.0);
+
+
+Intersection hit_sphere(const vec3 center, float radius, vec3 color, float m_index, const Ray r) { // check for faster intersection
+    Intersection i;
+    i.hit = false;
+
+    vec3 toSphere = center -  r.origin;
+    vec3 toRay = r.origin - center;
+
+    // A = 1 since direction normalized
+    float B = (2* dot(toRay, r.direction));
+    float C = dot(toRay , toRay) - radius * radius;
+
+    float disc =  B*B - 4*C;
+
+    if(disc < 0) return i;
+
+    float sqrtd =  sqrt(disc);
+
+    const float inv_2 = 1.0/2.0;
+
+    float t1 = (-B - sqrtd) * inv_2;
+    float t2 = (-B + sqrtd) * inv_2;
+
+    if (t2 < BIAS) return i;
+
+    if (t1 < BIAS) {
+        t1 = t2;
+    }
+
+    vec3 p =  r.origin + r.direction * t1;
+    i.position = p;
+    i.normal = normalize(p - center);
+    i.color = color;
+    i.m_index = m_index;
+    i.hit = true;
+    i.t1 = t1;
+    return i;
+}
+
+
+vec3 get_ray_direction(ivec2 pixel_coords, ivec2 screen_size){
+    vec2 uv = (vec2(pixel_coords) + 0.5) / vec2(screen_size);
+    vec2 ndc = uv * 2.0 - 1.0;
+    vec4 clipCoords = vec4(ndc, 1.0, 1.0);
+    vec4 worldCoords = ubo.viewProjInv * clipCoords;
+    vec3 targetWorldPos = worldCoords.xyz / worldCoords.w;
+
+    return normalize(targetWorldPos - ubo.position.xyz);
+}
+
+void main() {
+    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 screen_size = imageSize(resultImage);
+
+    if (pixel_coords.x >= screen_size.x || pixel_coords.y >= screen_size.y) {
+        return;
+    }
+
+    Ray r;
+    r.origin = ubo.position.xyz;
+    r.direction = get_ray_direction(pixel_coords, screen_size);
+    
+    Intersection intersection;
+    intersection.hit = false;
+    intersection.t1 = FLT_MAX;
+
+    for (int i = 0; i < spheres.length(); i++) {
+        Sphere s = spheres[i];
+        Intersection iTemp = hit_sphere(s.geometry.xyz, s.geometry.w, s.materialInfo.xyz, s.materialInfo.w , r);
+        if(iTemp.hit && iTemp.t1 < intersection.t1){
+            intersection = iTemp;
+        }
+    }
+
+    vec3 color = BACKGROUND_COLOR;
+    if(intersection.hit){
+        color = intersection.color;
+    }
+
+    imageStore(resultImage, pixel_coords, vec4(color, 1.0));
+}

@@ -14,6 +14,7 @@ struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily; // on peut voir si on a une graphics queue, pour certaines queue on est pas obligé de l'avoir forcément
 	std::optional<uint32_t> presentFamily;	// see if we can present images to the surface
 	std::optional<uint32_t> transferFamily;
+	std::optional<uint32_t> computeFamily; // dedicated compute queue for better performance
 
 	bool isComplete() {
 		return graphicsFamily.has_value() && presentFamily.has_value() && transferFamily.has_value();
@@ -52,6 +53,7 @@ public:
     VkQueue getGraphicsQueue() const { return m_graphicsQueue; }
     VkQueue getPresentQueue() const { return m_presentQueue; }
     VkQueue getTransferQueue() const { return m_transferQueue; }
+    VkQueue getComputeQueue() const { return m_computeQueue; }
     VkSampleCountFlagBits getMsaaSamples() const { return m_msaaSamples; }
 	
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
@@ -73,6 +75,7 @@ private:
 	VkQueue m_graphicsQueue = VK_NULL_HANDLE;
 	VkQueue m_presentQueue = VK_NULL_HANDLE;
 	VkQueue m_transferQueue= VK_NULL_HANDLE;
+	VkQueue m_computeQueue = VK_NULL_HANDLE;
 
 	VkSampleCountFlagBits m_msaaSamples;
 	VkSampleCountFlagBits getMaxMsaa();
@@ -85,7 +88,6 @@ private:
 	bool checkValidationLayerSupport();
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 	bool isDeviceSuitable(VkPhysicalDevice device);
-
 
 };
 

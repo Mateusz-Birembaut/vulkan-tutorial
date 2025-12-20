@@ -13,7 +13,7 @@ class SwapChain {
 	SwapChain() = default;
 	~SwapChain() = default;
 
-	void init(VulkanContext* context, GLFWwindow* window);
+	void init(VulkanContext* context, GLFWwindow* window, VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 	void cleanup();
 	void recreate(GLFWwindow* window);
 
@@ -22,8 +22,9 @@ class SwapChain {
 	VkSwapchainKHR getSwapChain() const { return m_swapChain; }
     VkFormat getImageFormat() const { return m_imageFormat; }
     VkExtent2D getExtent() const { return m_extent; }
+	const std::vector<VkImage>& getImages() const { return m_images; }
     const std::vector<VkImageView>& getImageViews() const { return m_imageViews; }
-	 const std::vector<VkFramebuffer>& getFramebuffers() const { return m_frameBuffers; }
+	const std::vector<VkFramebuffer>& getFramebuffers() const { return m_frameBuffers; }
     size_t getImageCount() const { return m_images.size(); }
 
       private:
@@ -44,4 +45,5 @@ class SwapChain {
 	std::vector<VkFramebuffer> m_frameBuffers;
 	VkFormat m_imageFormat;
 	VkExtent2D m_extent;
+	VkImageUsageFlags m_imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 };

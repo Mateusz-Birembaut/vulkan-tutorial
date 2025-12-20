@@ -20,6 +20,7 @@ public:
 	VkBuffer get() const { return m_buffer; };
 	VkDeviceMemory getDeviceMemory() { return m_memory; };
 	void* getMapped() const { return m_mapped; };
+	VkDeviceSize getSize() const { return m_size; };
 
 	void copyTo(VkBuffer dstBuffer, VkDeviceSize size);
 

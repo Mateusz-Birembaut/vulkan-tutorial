@@ -3,27 +3,11 @@
 #include <VulkanApp/Utils/FileReader.h>
 #include <VulkanApp/Core/VulkanContext.h>
 #include <VulkanApp/Resources/Mesh.h>
+#include <VulkanApp/Utils/Utility.h>
 
 #include <vulkan/vulkan.h>
 #include <stdexcept>
 #include <iostream>
-
-/// @brief Creates a shader module and vector manages the alignment
-/// @param code 
-/// @return 
-VkShaderModule Pipeline::createShaderModule(const std::vector<char>& code) {
-	VkShaderModuleCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize = code.size();
-	createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
-
-	VkShaderModule shaderModule;
-	if (vkCreateShaderModule(m_context->getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create shader module!");
-	}
-
-	return shaderModule;
-}
 
 
 void Pipeline::init(VulkanContext* context, VkRenderPass renderPass, VkDescriptorSetLayout descriptorSetLayout) {
@@ -65,8 +49,8 @@ void Pipeline::createGraphicsPipeline() {
 	auto vertShaderCode{FileReader::readSPV(g_vertex_shader)};
 	auto fragShaderCode{FileReader::readSPV(g_fragment_shader)};
 
-	VkShaderModule vertShaderModule{createShaderModule(vertShaderCode)};
-	VkShaderModule fragShaderModule{createShaderModule(fragShaderCode)};
+	VkShaderModule vertShaderModule{createShaderModule(m_context->getDevice(), vertShaderCode)};
+	VkShaderModule fragShaderModule{createShaderModule(m_context->getDevice(), fragShaderCode)};
 
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

@@ -59,14 +59,14 @@ Image Image::createTextureFromFile(VulkanContext* context, CommandManager* cmdMa
 	img.init(context, texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, mipLevels, VK_SAMPLE_COUNT_1_BIT, usage, VK_IMAGE_ASPECT_COLOR_BIT, createSampler, genMipMap);
 
 	// transition, copy, generate mipmaps (or transition to shader read)
-	img.transitionImageLayout(cmdManager, img.m_image, VK_FORMAT_R8G8B8A8_SRGB, mipLevels, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	img.transitionImageLayout(cmdManager, cmdManager->getTransferCommandPool(), context->getTransferQueue(), img.m_image, VK_FORMAT_R8G8B8A8_SRGB, mipLevels, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 	img.copyBufferToImage(cmdManager, staging.get(), img.m_image, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
 	if (genMipMap) {
 		img.generateMipmaps(cmdManager, img.m_image, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
 	} else {
-		img.transitionImageLayout(cmdManager, img.m_image, VK_FORMAT_R8G8B8A8_SRGB, mipLevels, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		img.transitionImageLayout(cmdManager, cmdManager->getCommandPool(), context->getGraphicsQueue() ,img.m_image, VK_FORMAT_R8G8B8A8_SRGB, mipLevels, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
 
 	staging.cleanup();
@@ -74,6 +74,16 @@ Image Image::createTextureFromFile(VulkanContext* context, CommandManager* cmdMa
 	return img;
 }
 
+
+Image Image::createImageStorage(VulkanContext* context, CommandManager* cmdManager, const SwapChain& swapchain) {
+	Image img;
+	auto extent = swapchain.getExtent();
+	img.init(context,  extent.width, extent.height, VK_FORMAT_R8G8B8A8_UNORM, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_ASPECT_COLOR_BIT, false, false);
+	
+	img.transitionImageLayout( cmdManager, cmdManager->getComputeCommandPool(), context->getComputeQueue(), img.getImage(), VK_FORMAT_R8G8B8A8_UNORM, 1, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+
+	return img;
+}
 
 void Image::cleanup() noexcept{
 
@@ -117,9 +127,7 @@ void Image::init(VulkanContext* context, uint32_t w, uint32_t h, VkFormat format
 }
 
 
-void Image::transitionImageLayout(CommandManager* cmdManager, VkImage image, VkFormat format, uint32_t mipLevels, VkImageLayout oldLayout, VkImageLayout newLayout) {
-	VkCommandPool pool = cmdManager->getTransferCommandPool();
-	VkQueue queue = m_context->getTransferQueue();
+void Image::transitionImageLayout(CommandManager* cmdManager, VkCommandPool pool, VkQueue queue, VkImage image, VkFormat format, uint32_t mipLevels, VkImageLayout oldLayout, VkImageLayout newLayout) {
 	VkCommandBuffer commandBuffer = cmdManager->beginSingleTimeCommands(pool);
 
 	VkImageMemoryBarrier barrier{};
@@ -148,9 +156,14 @@ void Image::transitionImageLayout(CommandManager* cmdManager, VkImage image, VkF
 		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 		srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	} else {
-		throw std::invalid_argument("unsupported layout transition in Image::transitionImageLayout");
-	}
+	} else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT; 
+        srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        dstStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT; 
+    } else {
+        throw std::invalid_argument("unsupported layout transition in Image::transitionImageLayout");
+    }
 
 	vkCmdPipelineBarrier(commandBuffer, srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
@@ -378,3 +391,6 @@ void Image::generateMipmaps(CommandManager* cmdManager, VkImage image, VkFormat 
 
 	cmdManager->endSingleTimeCommands(commandBuffer, pool, queue);
 }
+
+
+

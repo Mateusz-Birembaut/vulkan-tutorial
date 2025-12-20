@@ -11,7 +11,7 @@
 
 /// @brief Retrieve for the given physical device, each queue family ids
 /// @param device 
-/// @return A struct containing : graphicsFamily, presentFamily, transferFamily ids
+/// @return A struct containing : graphicsFamily, presentFamily, transferFamily, computeFamily ids
 QueueFamilyIndices VulkanContext::findQueueFamilies(VkPhysicalDevice device) {
 	QueueFamilyIndices indices;
 	uint32_t queueFamilyCount = 0;
@@ -28,6 +28,9 @@ QueueFamilyIndices VulkanContext::findQueueFamilies(VkPhysicalDevice device) {
 		}
 		if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT && !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
 			indices.transferFamily = i;
+		}
+		if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT && !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+			indices.computeFamily = i;
 		}
 
 		VkBool32 presentSupport{false};
@@ -46,7 +49,7 @@ QueueFamilyIndices VulkanContext::findQueueFamilies(VkPhysicalDevice device) {
 }
 
 /// @brief Retrieve for the current physical device, each queue family ids
-/// @return A struct containing : graphicsFamily, presentFamily, transferFamily ids
+/// @return A struct containing : graphicsFamily, presentFamily, transferFamily, computeFamily ids
 QueueFamilyIndices VulkanContext::getQueueFamilies() {
 	QueueFamilyIndices indices;
 	uint32_t queueFamilyCount = 0;
@@ -63,6 +66,9 @@ QueueFamilyIndices VulkanContext::getQueueFamilies() {
 		}
 		if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT && !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
 			indices.transferFamily = i;
+		}
+		if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT && !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+			indices.computeFamily = i;
 		}
 
 		VkBool32 presentSupport{false};
@@ -309,13 +315,13 @@ void VulkanContext::pickPhysicalDevice() {
 }
 
 
-/// @brief Creates the logical device and the necessary queues
+/// @brief Creates the logical device and the necessary queues, uses 
 /// @param enableValidationLayers 
 void VulkanContext::createLogicalDevice(bool enableValidationLayers) { 
 	QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice);
 
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::set<uint32_t> uniqueQueueFamilies{indices.graphicsFamily.value(), indices.presentFamily.value(), indices.transferFamily.value()};
+	std::set<uint32_t> uniqueQueueFamilies{indices.graphicsFamily.value(), indices.presentFamily.value(), indices.transferFamily.value(), indices.computeFamily.value()};
 
 	float queuePriority = 1.0f;
 	for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -356,6 +362,12 @@ void VulkanContext::createLogicalDevice(bool enableValidationLayers) {
 	vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
 	vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_presentQueue);
 	vkGetDeviceQueue(m_device, indices.transferFamily.value(), 0, &m_transferQueue);
+	if (indices.computeFamily.has_value()) {
+		std::cout << "has compute queue" << '\n';
+		vkGetDeviceQueue(m_device, indices.computeFamily.value(), 0, &m_computeQueue);
+	} else {
+		m_computeQueue = m_graphicsQueue;
+	}
 }
 
 
@@ -396,6 +408,7 @@ void VulkanContext::cleanup() noexcept {
 	m_graphicsQueue = VK_NULL_HANDLE;
     m_presentQueue = VK_NULL_HANDLE;
     m_transferQueue = VK_NULL_HANDLE;
+    m_computeQueue = VK_NULL_HANDLE;
     m_physicalDevice = VK_NULL_HANDLE;
     m_msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 }

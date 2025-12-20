@@ -12,8 +12,9 @@
 /// @brief creates the swapchain and the image views
 /// @param context
 /// @param window
-void SwapChain::init(VulkanContext* context, GLFWwindow* window) {
+void SwapChain::init(VulkanContext* context, GLFWwindow* window, VkImageUsageFlags usage) {
 	m_context = context;
+	m_imageUsage = usage;
 	create(window);
 	createImageViews();
 }
@@ -126,7 +127,7 @@ void SwapChain::create(GLFWwindow* window) {
 	swapChainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
 	swapChainCreateInfo.imageExtent = extent;
 	swapChainCreateInfo.imageArrayLayers = 1;
-	swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	swapChainCreateInfo.imageUsage = m_imageUsage;
 
 	QueueFamilyIndices indices = m_context->getQueueFamilies();
 	std::set<uint32_t> uniqueIndices{indices.graphicsFamily.value(), indices.presentFamily.value(), indices.transferFamily.value()};

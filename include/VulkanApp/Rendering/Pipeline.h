@@ -16,7 +16,6 @@ public:
 	Pipeline() = default;
 	~Pipeline() = default;
 
-	// Initialize with required external objects. Pipeline does not own them.
 	void init(VulkanContext* context, VkRenderPass renderPass, VkDescriptorSetLayout descriptorSetLayout);
 	void cleanup();
 
@@ -36,6 +35,5 @@ private:
 	VkPipelineLayout m_layout = VK_NULL_HANDLE;
 	VkPipeline m_pipeline = VK_NULL_HANDLE; 	
 
-	VkShaderModule createShaderModule(const std::vector<char>& code);
 	void createGraphicsPipeline();
 };

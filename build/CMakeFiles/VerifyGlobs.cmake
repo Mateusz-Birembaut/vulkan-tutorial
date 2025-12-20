@@ -10,6 +10,8 @@ set(OLD_GLOB
   "/home/mat/VulkanTutorial/src/Core/VulkanContext.cpp"
   "/home/mat/VulkanTutorial/src/Core/VulkanDebug.cpp"
   "/home/mat/VulkanTutorial/src/Renderer.cpp"
+  "/home/mat/VulkanTutorial/src/Rendering/ComputeDescriptor.cpp"
+  "/home/mat/VulkanTutorial/src/Rendering/ComputePipeline.cpp"
   "/home/mat/VulkanTutorial/src/Rendering/Descriptors.cpp"
   "/home/mat/VulkanTutorial/src/Rendering/Pipeline.cpp"
   "/home/mat/VulkanTutorial/src/Rendering/RenderPass.cpp"

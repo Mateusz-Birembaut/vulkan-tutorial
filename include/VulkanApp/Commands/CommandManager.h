@@ -17,6 +17,7 @@ public:
 	VkCommandPool getCommandPool() { return m_commandPool; };
 	VkCommandPool getTransferCommandPool() { return m_commandPoolTransfer; };
 	std::vector<VkCommandBuffer>& getCommandBuffers() { return m_commandBuffers; };
+	VkCommandPool getComputeCommandPool() { return m_commandPoolCompute; };
 
 	VkCommandBuffer beginSingleTimeCommands(VkCommandPool commandPool);
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer, VkCommandPool commandPool, VkQueue queue);
@@ -29,6 +30,7 @@ private:
 
 	VkCommandPool m_commandPool = VK_NULL_HANDLE;
 	VkCommandPool m_commandPoolTransfer = VK_NULL_HANDLE;
+	VkCommandPool m_commandPoolCompute = VK_NULL_HANDLE;
 	std::vector<VkCommandBuffer> m_commandBuffers;
 
 };

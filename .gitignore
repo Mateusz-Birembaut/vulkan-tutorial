@@ -4,5 +4,9 @@
 # Ignore batch files for compilation
 compile.bat
 
+build/
+
+.clang-format
+
 # Ignore compiled code or binaries
 vkTuto

@@ -10,10 +10,11 @@
 #include <VulkanApp/Resources/Buffer.h>
 #include <VulkanApp/Resources/Image.h>
 #include <VulkanApp/Sync/SyncObjects.h>
-#include <VulkanApp/RayTracing/Objects/Sphere.h>
+#include <VulkanApp/RayTracing/Objects/Object.h>
 #include <VulkanApp/Resources/Mesh.h>
 #include <VulkanApp/Rendering/ComputeDescriptor.h>
 #include <VulkanApp/Rendering/ComputePipeline.h>
+#include <VulkanApp/RayTracing/Objects/Light.h>
 
 #include "Camera.h"
 
@@ -62,26 +63,13 @@ class VulkanApp {
 	ComputePipeline m_compPipeline;
 	ComputeDescriptor m_compDescriptor;
 	
-	std::vector<Sphere> m_spheres;
-	std::vector<Buffer> m_sphereSSBOs; 
+	std::vector<Buffer> m_uniformBuffers;
+	std::vector<Object> m_objs;
+	std::vector<Buffer> m_objSSBOs; 
 	std::vector<Image> m_storageImages;
-	std::vector<Buffer> m_uniformBuffers;
+	std::vector<Light> m_lights;
+	std::vector<Buffer> m_lightSSBOs; 
 
-/* 	
-	Rasterization
-	Pipeline m_pipeline;
-	Pipeline m_computePipeline;
-	RenderPass m_renderPass;
-	Descriptors m_descriptors; 
-
-	Mesh m_mesh;
-	std::vector<Buffer> m_uniformBuffers;
-
-	Image m_color;
-	Image m_depth;
-	Image m_texture;
-
-*/
 	CommandManager m_commandManager;
 
 	SyncObjects m_syncObjects;
@@ -94,7 +82,8 @@ class VulkanApp {
 	void initVulkan();
 
 	void createUniformBuffer(uint32_t max_frames_in_flight);
-	void createSphereSSBOs(uint32_t max_frames_in_flight);
+	void createObjectsSSBOs(uint32_t max_frames_in_flight);
+	void createLightSSBOs(uint32_t max_frames_in_flight);
 	void createImageStorage(uint32_t max_frames_in_flight);
 
 	void insertImageBarrier(VkCommandBuffer cmd, VkImage image, VkAccessFlags srcAccess, VkAccessFlags dstAccess, VkImageLayout oldLayout, VkImageLayout newLayout, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage);
@@ -118,9 +107,13 @@ class VulkanApp {
 	bool m_framebufferResized{false};// VK_ERROR_OUT_OF_DATE_KHR is not guarentee when resizing, it fixes that 
 	float m_deltaTime{0.0f};
 	double m_lastFrame{0.0};
+	float lastX{400};
+	float lastY{300};
+	bool m_focus{false};
 
 
 	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
+	static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 
 	void processInput(float dt);
 	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);

@@ -2,7 +2,7 @@
 
 #include <VulkanApp/Core/VulkanContext.h>
 #include<VulkanApp/Resources/Buffer.h>
-#include <VulkanApp/RayTracing/Objects/Sphere.h>
+#include <VulkanApp/RayTracing/Objects/Object.h>
 #include <VulkanApp/Resources/Image.h>
 #include <vulkan/vulkan.h>
 
@@ -18,6 +18,7 @@ public:
 	void init(VulkanContext* context, const uint32_t max_frames_in_flight,
 							  const std::vector<Buffer>& camUniformBuffers,
 							  const std::vector<Buffer>& spheresBuffers,
+							  const std::vector<Buffer>& lightBuffers,
 							  const std::vector<Image>& storageImagesBuffers);
 							  
 	void cleanup() noexcept;
@@ -31,7 +32,8 @@ private:
 	void createPool( const uint32_t max_frames_in_flight );
 	void createSets( const uint32_t max_frames_in_flight, 
 					const std::vector<Buffer>& camUniformBuffers,
-					const std::vector<Buffer>& spheresBuffers,
+					const std::vector<Buffer>& sphereBuffers,
+					const std::vector<Buffer>& lightBuffers,
 					const std::vector<Image>& storageImagesBuffers);
 
 	VulkanContext* m_context = nullptr;

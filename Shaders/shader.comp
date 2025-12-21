@@ -12,16 +12,30 @@ layout(binding = 0) uniform CameraUBO {
 	float far;
 } ubo;
 
-struct Sphere {
-	vec4 geometry;     
-    vec4 materialInfo;
+struct ObjectData {
+    vec4 geometry;     // xyz = pos, w = type
+    vec4 rotation;     // xyz = rot, w = shininess
+    vec4 scale;        // xyz = scale, w = radius
+    vec4 materialInfo; // xyz = color, w = matID
 };
 
-layout(std430, binding = 1) buffer SphereSSBO {
-    Sphere spheres[];
+layout(std430, binding = 1) buffer objectBuffer {
+    ObjectData objs[];
 };
 
 layout(binding = 2, rgba8) uniform writeonly image2D resultImage;
+
+
+struct Light {
+	vec4 positionAndType; // xyz = position, w = type (0=dir, 1=point)
+    vec4 directionAndRange; // xyz = direction, w = range
+    vec4 colorAndIntensity; // xyz = rgb, w = intensity (write color as bgr since swapchain images will be bgr)
+};
+
+layout(std430, binding = 3) buffer LightSSBO {
+    Light lights[];
+};
+
 
 struct Ray{
     vec3 origin;
@@ -31,11 +45,10 @@ struct Ray{
 struct Intersection{
     vec3 position;
     vec3 normal;
-    vec3 color;
-    float m_index;
     float t1;
     float t2;
     bool hit;
+    int objID;
 };
 
 const float BIAS = 0.001;
@@ -43,24 +56,30 @@ const float FLT_MAX = 3.4028235e+38;
 const vec3 BACKGROUND_COLOR = vec3(0.0, 0.0, 0.0);
 
 
-Intersection hit_sphere(const vec3 center, float radius, vec3 color, float m_index, const Ray r) { // check for faster intersection
+
+Intersection hit_sphere(ObjectData o, int objSSBOID, const Ray r) { 
     Intersection i;
     i.hit = false;
 
-    vec3 toSphere = center -  r.origin;
+    vec3 center = o.geometry.xyz;
+    float radius = o.scale.w;
+    vec3 color = o.materialInfo.xyz;
+    float m_index = o.materialInfo.w;
+
+    vec3 toSphere = center - r.origin;
     vec3 toRay = r.origin - center;
 
     // A = 1 since direction normalized
-    float B = (2* dot(toRay, r.direction));
-    float C = dot(toRay , toRay) - radius * radius;
+    float B = (2 * dot(toRay, r.direction));
+    float C = dot(toRay, toRay) - radius * radius;
 
-    float disc =  B*B - 4*C;
+    float disc = B * B - 4 * C;
 
-    if(disc < 0) return i;
+    if (disc < 0) return i;
 
-    float sqrtd =  sqrt(disc);
+    float sqrtd = sqrt(disc);
 
-    const float inv_2 = 1.0/2.0;
+    const float inv_2 = 1.0 / 2.0;
 
     float t1 = (-B - sqrtd) * inv_2;
     float t2 = (-B + sqrtd) * inv_2;
@@ -71,16 +90,130 @@ Intersection hit_sphere(const vec3 center, float radius, vec3 color, float m_ind
         t1 = t2;
     }
 
-    vec3 p =  r.origin + r.direction * t1;
+    vec3 p = r.origin + r.direction * t1;
     i.position = p;
     i.normal = normalize(p - center);
-    i.color = color;
-    i.m_index = m_index;
     i.hit = true;
     i.t1 = t1;
+    i.objID = objSSBOID;
     return i;
 }
 
+void getBasisFromRotation(vec3 rot, out vec3 right, out vec3 up, out vec3 normal) {
+    float cx = cos(rot.x); 
+    float cy = cos(rot.y); 
+    float cz = cos(rot.z); 
+
+    float sx = sin(rot.x);
+    float sy = sin(rot.y);
+    float sz = sin(rot.z);
+
+    right = vec3(cy * cz, cx * sz + sx * sy * cz, sx * sz - cx * sy * cz);
+    up = vec3(-cy * sz, cx * cz - sx * sy * sz, sx * cz + cx * sy * sz);
+    normal = vec3(sy, -sx * cy, cx * cy);
+}
+
+Intersection hit_quad(ObjectData o, int objSSBOID, const Ray r) { 
+    Intersection i;
+    i.hit = false;
+    vec3 center = o.geometry.xyz;
+    vec3 rot = o.rotation.xyz; 
+    vec2 size = o.scale.xy; // half size on x and y
+
+    vec3 right, up, normal;
+    getBasisFromRotation(rot, right, up, normal);
+
+    float denom = dot(normal, r.direction);
+
+    if (abs(denom) < 0.0001) return i;
+
+    float t = dot(center - r.origin,  normal) / denom;
+
+    if (t < 0.0) return i;
+
+    vec3 position = r.origin + t * r.direction;
+    vec3 localPos = position - center; 
+
+    float u = dot(localPos, right);
+    float v = dot(localPos, up);
+
+    if (abs(u) > size.x || abs(v) > size.y) {
+        return i; 
+    }
+
+    i.normal = normal;
+    i.t1 = t;
+    i.objID = objSSBOID;
+    i.hit = true;
+    i.position = position;
+    return i;
+}
+
+Intersection hit_obj(ObjectData o, int objSSBOID, const Ray r) { 
+    float type = o.geometry.w;
+    Intersection i;
+    if(type == 0.0){ // sphere
+        i = hit_sphere(o, objSSBOID, r);
+    }else if (type == 1.0){
+        i = hit_quad(o, objSSBOID, r);
+    }
+    return i;
+}
+
+
+Intersection intersect_basic_objs(const Ray r){
+    Intersection intersection;
+    intersection.hit = false;
+    intersection.t1 = FLT_MAX;
+
+    for (int i = 0; i < objs.length(); i++) {
+        ObjectData o = objs[i];
+        Intersection iTemp = hit_obj(o, i, r);
+        if(iTemp.hit && iTemp.t1 < intersection.t1){
+            intersection = iTemp;
+        }
+    }
+    return intersection;
+}
+
+vec3 blinn_phong(Intersection intersection){
+    vec3 color = BACKGROUND_COLOR;
+
+    if(!intersection.hit) return color;
+
+    for (int i = 0; i < lights.length(); i++) {
+        Light l = lights[i];
+        float attenuation = 1.0;
+
+        vec3 L;
+
+        float type = l.positionAndType.w;
+
+        if(type == 0.0){ // dir
+            L = normalize(-(l.directionAndRange.xyz));
+
+        }else if (type == 1.0){ // point
+            L = l.positionAndType.xyz - intersection.position;
+            float distance = length(L);
+
+            if(distance > l.directionAndRange.w) continue;
+
+            attenuation = 1.0 / (distance * distance);
+            L = normalize(L);
+        } 
+
+        vec3 V = normalize(ubo.position.xyz - intersection.position);
+        vec3 H = normalize(L + V);
+
+        float diff = max(dot(intersection.normal, L), 0.0);
+        float spec = pow(max(dot(intersection.normal, H), 0.0), objs[intersection.objID].rotation.w); // shininess
+
+        vec3 lightColor = l.colorAndIntensity.zyx * l.colorAndIntensity.w;
+        color += (diff * objs[intersection.objID].materialInfo.zyx + spec * vec3(1.0)) * lightColor * attenuation;
+    }
+    return color;
+    
+}
 
 vec3 get_ray_direction(ivec2 pixel_coords, ivec2 screen_size){
     vec2 uv = (vec2(pixel_coords) + 0.5) / vec2(screen_size);
@@ -104,22 +237,10 @@ void main() {
     r.origin = ubo.position.xyz;
     r.direction = get_ray_direction(pixel_coords, screen_size);
     
-    Intersection intersection;
-    intersection.hit = false;
-    intersection.t1 = FLT_MAX;
+    Intersection intersection = intersect_basic_objs(r);
 
-    for (int i = 0; i < spheres.length(); i++) {
-        Sphere s = spheres[i];
-        Intersection iTemp = hit_sphere(s.geometry.xyz, s.geometry.w, s.materialInfo.xyz, s.materialInfo.w , r);
-        if(iTemp.hit && iTemp.t1 < intersection.t1){
-            intersection = iTemp;
-        }
-    }
+    vec3 color = blinn_phong(intersection);
 
-    vec3 color = BACKGROUND_COLOR;
-    if(intersection.hit){
-        color = intersection.color;
-    }
-
+    
     imageStore(resultImage, pixel_coords, vec4(color, 1.0));
 }

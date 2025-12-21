@@ -9,12 +9,13 @@
 
 void ComputeDescriptor::init(VulkanContext* context, const uint32_t max_frames_in_flight,
 							  const std::vector<Buffer>& camUniformBuffers,
-							  const std::vector<Buffer>& spheresBuffers,
+							  const std::vector<Buffer>& sphereBuffers,
+							  const std::vector<Buffer>& lightBuffers,
 							  const std::vector<Image>& storageImagesBuffers){
 	m_context = context;
 	createSetLayout();
 	createPool(max_frames_in_flight);
-	createSets(max_frames_in_flight, camUniformBuffers, spheresBuffers, storageImagesBuffers);
+	createSets(max_frames_in_flight, camUniformBuffers, sphereBuffers, lightBuffers, storageImagesBuffers);
 };
 
 
@@ -56,7 +57,14 @@ void ComputeDescriptor::createSetLayout() {
 	imageLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 	imageLayoutBinding.pImmutableSamplers = nullptr;
 
-	std::array<VkDescriptorSetLayoutBinding, 3> bindings = {uboLayoutBinding, spheresSSBOLayoutBinding, imageLayoutBinding};
+	VkDescriptorSetLayoutBinding lightsLayoutBinding{}; // image written storage
+	lightsLayoutBinding.binding = 3;
+	lightsLayoutBinding.descriptorCount = 1;
+	lightsLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	lightsLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+	lightsLayoutBinding.pImmutableSamplers = nullptr;
+
+	std::array<VkDescriptorSetLayoutBinding, 4> bindings = {uboLayoutBinding, spheresSSBOLayoutBinding, imageLayoutBinding, lightsLayoutBinding};
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -69,13 +77,16 @@ void ComputeDescriptor::createSetLayout() {
 
 
 void ComputeDescriptor::createPool(const uint32_t max_frames_in_flight) {
-	std::array<VkDescriptorPoolSize, 3> poolSizes{};
+	std::array<VkDescriptorPoolSize, 4> poolSizes{};
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = static_cast<uint32_t>(max_frames_in_flight);
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	poolSizes[1].descriptorCount = static_cast<uint32_t>(max_frames_in_flight);
 	poolSizes[2].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 	poolSizes[2].descriptorCount = static_cast<uint32_t>(max_frames_in_flight);
+	poolSizes[3].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	poolSizes[3].descriptorCount = static_cast<uint32_t>(max_frames_in_flight);
+
 
 	VkDescriptorPoolCreateInfo infoPool{};
 	infoPool.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -92,7 +103,8 @@ void ComputeDescriptor::createPool(const uint32_t max_frames_in_flight) {
 
 void ComputeDescriptor::createSets( const uint32_t max_frames_in_flight, 
 							  const std::vector<Buffer>& camUniformBuffers,
-							  const std::vector<Buffer>& spheresBuffers,
+							  const std::vector<Buffer>& sphereBuffers,
+							  const std::vector<Buffer>& lightBuffers,
 							  const std::vector<Image>& storageImagesBuffers) { 
 
 	std::vector<VkDescriptorSetLayout> layouts(max_frames_in_flight, m_setLayout);
@@ -116,16 +128,21 @@ void ComputeDescriptor::createSets( const uint32_t max_frames_in_flight,
 		camUniformBufferInfo.range = camUniformBuffers[i].getSize();
 
 		VkDescriptorBufferInfo spheresBufferInfo{};
-		spheresBufferInfo.buffer = spheresBuffers[i].get();
+		spheresBufferInfo.buffer = sphereBuffers[i].get();
 		spheresBufferInfo.offset = 0;
-		spheresBufferInfo.range = spheresBuffers[i].getSize();
+		spheresBufferInfo.range = sphereBuffers[i].getSize();
 
 		VkDescriptorImageInfo imageInfo{};
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 		imageInfo.imageView = storageImagesBuffers[i].getView();
 		imageInfo.sampler = VK_NULL_HANDLE; // sampler is ingored by vulkan
 
-		std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
+		VkDescriptorBufferInfo lightsBufferInfo{};
+		lightsBufferInfo.buffer = lightBuffers[i].get();
+		lightsBufferInfo.offset = 0;
+		lightsBufferInfo.range = lightBuffers[i].getSize();
+
+		std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
 		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrites[0].dstSet = m_sets[i];
 		descriptorWrites[0].dstBinding = 0;
@@ -150,6 +167,13 @@ void ComputeDescriptor::createSets( const uint32_t max_frames_in_flight,
 		descriptorWrites[2].descriptorCount = 1;
 		descriptorWrites[2].pImageInfo = &imageInfo;
 
+		descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[3].dstSet = m_sets[i];
+		descriptorWrites[3].dstBinding = 3;
+		descriptorWrites[3].dstArrayElement = 0;
+		descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		descriptorWrites[3].descriptorCount = 1;
+		descriptorWrites[3].pBufferInfo = &lightsBufferInfo;
 
 		vkUpdateDescriptorSets(m_context->getDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}

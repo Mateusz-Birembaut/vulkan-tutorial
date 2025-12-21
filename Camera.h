@@ -72,14 +72,20 @@ class Camera {
 		return m_fov;
 	}
 
+	float getSensitivity() const{
+		return m_sensitivity;
+	}
+
 	glm::mat4 getViewMatrix() const {
-		glm::mat4 rotMat = glm::toMat4(glm::normalize(m_rotation));
+		glm::mat4 rotMat = glm::toMat4(glm::conjugate(glm::normalize(m_rotation)));
 		glm::mat4 trans = glm::translate(glm::mat4(1.0f), -m_position);
 		return rotMat * trans;
 	}
-
+	
 	glm::mat4 getProjMatrix(float aspectRatio) const {
-		return  glm::perspective(glm::radians(m_fov), aspectRatio, m_near, m_far);
+		auto proj =  glm::perspective(glm::radians(m_fov), aspectRatio, m_near, m_far);
+		proj[1][1] *= -1;
+		return proj;
 	}
 
 	glm::mat4 getViewProjInv(float aspectRatio) const {
@@ -91,6 +97,7 @@ class Camera {
       private:
 	glm::quat m_rotation;
 	glm::vec3 m_position;
+	float m_sensitivity{0.01f};
 	float m_speed{2.5f};
 	float m_near{0.1f};
 	float m_far{100.0f};

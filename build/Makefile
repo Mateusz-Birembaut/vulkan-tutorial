@@ -117,6 +117,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named copy_compile_commands
+
+# Build rule for target.
+copy_compile_commands: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 copy_compile_commands
+.PHONY : copy_compile_commands
+
+# fast build rule for target.
+copy_compile_commands/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/copy_compile_commands.dir/build.make CMakeFiles/copy_compile_commands.dir/build
+.PHONY : copy_compile_commands/fast
+
+#=============================================================================
 # Target rules for targets named VulkanTutorial
 
 # Build rule for target.
@@ -128,6 +141,394 @@ VulkanTutorial: cmake_check_build_system
 VulkanTutorial/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/build
 .PHONY : VulkanTutorial/fast
+
+#=============================================================================
+# Target rules for targets named run
+
+# Build rule for target.
+run: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 run
+.PHONY : run
+
+# fast build rule for target.
+run/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/build
+.PHONY : run/fast
+
+#=============================================================================
+# Target rules for targets named run-fps
+
+# Build rule for target.
+run-fps: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 run-fps
+.PHONY : run-fps
+
+# fast build rule for target.
+run-fps/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/run-fps.dir/build.make CMakeFiles/run-fps.dir/build
+.PHONY : run-fps/fast
+
+#=============================================================================
+# Target rules for targets named VulkanTutorial_autogen_timestamp_deps
+
+# Build rule for target.
+VulkanTutorial_autogen_timestamp_deps: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 VulkanTutorial_autogen_timestamp_deps
+.PHONY : VulkanTutorial_autogen_timestamp_deps
+
+# fast build rule for target.
+VulkanTutorial_autogen_timestamp_deps/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/build.make CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/build
+.PHONY : VulkanTutorial_autogen_timestamp_deps/fast
+
+#=============================================================================
+# Target rules for targets named VulkanTutorial_autogen
+
+# Build rule for target.
+VulkanTutorial_autogen: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 VulkanTutorial_autogen
+.PHONY : VulkanTutorial_autogen
+
+# fast build rule for target.
+VulkanTutorial_autogen/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial_autogen.dir/build.make CMakeFiles/VulkanTutorial_autogen.dir/build
+.PHONY : VulkanTutorial_autogen/fast
+
+VulkanTutorial_autogen/mocs_compilation.o: VulkanTutorial_autogen/mocs_compilation.cpp.o
+.PHONY : VulkanTutorial_autogen/mocs_compilation.o
+
+# target to build an object file
+VulkanTutorial_autogen/mocs_compilation.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.o
+.PHONY : VulkanTutorial_autogen/mocs_compilation.cpp.o
+
+VulkanTutorial_autogen/mocs_compilation.i: VulkanTutorial_autogen/mocs_compilation.cpp.i
+.PHONY : VulkanTutorial_autogen/mocs_compilation.i
+
+# target to preprocess a source file
+VulkanTutorial_autogen/mocs_compilation.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.i
+.PHONY : VulkanTutorial_autogen/mocs_compilation.cpp.i
+
+VulkanTutorial_autogen/mocs_compilation.s: VulkanTutorial_autogen/mocs_compilation.cpp.s
+.PHONY : VulkanTutorial_autogen/mocs_compilation.s
+
+# target to generate assembly for a file
+VulkanTutorial_autogen/mocs_compilation.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.s
+.PHONY : VulkanTutorial_autogen/mocs_compilation.cpp.s
+
+src/Commands/CommandManager.o: src/Commands/CommandManager.cpp.o
+.PHONY : src/Commands/CommandManager.o
+
+# target to build an object file
+src/Commands/CommandManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.o
+.PHONY : src/Commands/CommandManager.cpp.o
+
+src/Commands/CommandManager.i: src/Commands/CommandManager.cpp.i
+.PHONY : src/Commands/CommandManager.i
+
+# target to preprocess a source file
+src/Commands/CommandManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.i
+.PHONY : src/Commands/CommandManager.cpp.i
+
+src/Commands/CommandManager.s: src/Commands/CommandManager.cpp.s
+.PHONY : src/Commands/CommandManager.s
+
+# target to generate assembly for a file
+src/Commands/CommandManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.s
+.PHONY : src/Commands/CommandManager.cpp.s
+
+src/Core/SwapChain.o: src/Core/SwapChain.cpp.o
+.PHONY : src/Core/SwapChain.o
+
+# target to build an object file
+src/Core/SwapChain.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o
+.PHONY : src/Core/SwapChain.cpp.o
+
+src/Core/SwapChain.i: src/Core/SwapChain.cpp.i
+.PHONY : src/Core/SwapChain.i
+
+# target to preprocess a source file
+src/Core/SwapChain.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.i
+.PHONY : src/Core/SwapChain.cpp.i
+
+src/Core/SwapChain.s: src/Core/SwapChain.cpp.s
+.PHONY : src/Core/SwapChain.s
+
+# target to generate assembly for a file
+src/Core/SwapChain.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.s
+.PHONY : src/Core/SwapChain.cpp.s
+
+src/Core/VulkanContext.o: src/Core/VulkanContext.cpp.o
+.PHONY : src/Core/VulkanContext.o
+
+# target to build an object file
+src/Core/VulkanContext.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o
+.PHONY : src/Core/VulkanContext.cpp.o
+
+src/Core/VulkanContext.i: src/Core/VulkanContext.cpp.i
+.PHONY : src/Core/VulkanContext.i
+
+# target to preprocess a source file
+src/Core/VulkanContext.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.i
+.PHONY : src/Core/VulkanContext.cpp.i
+
+src/Core/VulkanContext.s: src/Core/VulkanContext.cpp.s
+.PHONY : src/Core/VulkanContext.s
+
+# target to generate assembly for a file
+src/Core/VulkanContext.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.s
+.PHONY : src/Core/VulkanContext.cpp.s
+
+src/Core/VulkanDebug.o: src/Core/VulkanDebug.cpp.o
+.PHONY : src/Core/VulkanDebug.o
+
+# target to build an object file
+src/Core/VulkanDebug.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o
+.PHONY : src/Core/VulkanDebug.cpp.o
+
+src/Core/VulkanDebug.i: src/Core/VulkanDebug.cpp.i
+.PHONY : src/Core/VulkanDebug.i
+
+# target to preprocess a source file
+src/Core/VulkanDebug.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.i
+.PHONY : src/Core/VulkanDebug.cpp.i
+
+src/Core/VulkanDebug.s: src/Core/VulkanDebug.cpp.s
+.PHONY : src/Core/VulkanDebug.s
+
+# target to generate assembly for a file
+src/Core/VulkanDebug.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.s
+.PHONY : src/Core/VulkanDebug.cpp.s
+
+src/Rendering/ComputeDescriptor.o: src/Rendering/ComputeDescriptor.cpp.o
+.PHONY : src/Rendering/ComputeDescriptor.o
+
+# target to build an object file
+src/Rendering/ComputeDescriptor.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.o
+.PHONY : src/Rendering/ComputeDescriptor.cpp.o
+
+src/Rendering/ComputeDescriptor.i: src/Rendering/ComputeDescriptor.cpp.i
+.PHONY : src/Rendering/ComputeDescriptor.i
+
+# target to preprocess a source file
+src/Rendering/ComputeDescriptor.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.i
+.PHONY : src/Rendering/ComputeDescriptor.cpp.i
+
+src/Rendering/ComputeDescriptor.s: src/Rendering/ComputeDescriptor.cpp.s
+.PHONY : src/Rendering/ComputeDescriptor.s
+
+# target to generate assembly for a file
+src/Rendering/ComputeDescriptor.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.s
+.PHONY : src/Rendering/ComputeDescriptor.cpp.s
+
+src/Rendering/ComputePipeline.o: src/Rendering/ComputePipeline.cpp.o
+.PHONY : src/Rendering/ComputePipeline.o
+
+# target to build an object file
+src/Rendering/ComputePipeline.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.o
+.PHONY : src/Rendering/ComputePipeline.cpp.o
+
+src/Rendering/ComputePipeline.i: src/Rendering/ComputePipeline.cpp.i
+.PHONY : src/Rendering/ComputePipeline.i
+
+# target to preprocess a source file
+src/Rendering/ComputePipeline.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.i
+.PHONY : src/Rendering/ComputePipeline.cpp.i
+
+src/Rendering/ComputePipeline.s: src/Rendering/ComputePipeline.cpp.s
+.PHONY : src/Rendering/ComputePipeline.s
+
+# target to generate assembly for a file
+src/Rendering/ComputePipeline.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.s
+.PHONY : src/Rendering/ComputePipeline.cpp.s
+
+src/Rendering/Descriptors.o: src/Rendering/Descriptors.cpp.o
+.PHONY : src/Rendering/Descriptors.o
+
+# target to build an object file
+src/Rendering/Descriptors.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.o
+.PHONY : src/Rendering/Descriptors.cpp.o
+
+src/Rendering/Descriptors.i: src/Rendering/Descriptors.cpp.i
+.PHONY : src/Rendering/Descriptors.i
+
+# target to preprocess a source file
+src/Rendering/Descriptors.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.i
+.PHONY : src/Rendering/Descriptors.cpp.i
+
+src/Rendering/Descriptors.s: src/Rendering/Descriptors.cpp.s
+.PHONY : src/Rendering/Descriptors.s
+
+# target to generate assembly for a file
+src/Rendering/Descriptors.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.s
+.PHONY : src/Rendering/Descriptors.cpp.s
+
+src/Rendering/Pipeline.o: src/Rendering/Pipeline.cpp.o
+.PHONY : src/Rendering/Pipeline.o
+
+# target to build an object file
+src/Rendering/Pipeline.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.o
+.PHONY : src/Rendering/Pipeline.cpp.o
+
+src/Rendering/Pipeline.i: src/Rendering/Pipeline.cpp.i
+.PHONY : src/Rendering/Pipeline.i
+
+# target to preprocess a source file
+src/Rendering/Pipeline.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.i
+.PHONY : src/Rendering/Pipeline.cpp.i
+
+src/Rendering/Pipeline.s: src/Rendering/Pipeline.cpp.s
+.PHONY : src/Rendering/Pipeline.s
+
+# target to generate assembly for a file
+src/Rendering/Pipeline.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.s
+.PHONY : src/Rendering/Pipeline.cpp.s
+
+src/Rendering/RenderPass.o: src/Rendering/RenderPass.cpp.o
+.PHONY : src/Rendering/RenderPass.o
+
+# target to build an object file
+src/Rendering/RenderPass.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.o
+.PHONY : src/Rendering/RenderPass.cpp.o
+
+src/Rendering/RenderPass.i: src/Rendering/RenderPass.cpp.i
+.PHONY : src/Rendering/RenderPass.i
+
+# target to preprocess a source file
+src/Rendering/RenderPass.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.i
+.PHONY : src/Rendering/RenderPass.cpp.i
+
+src/Rendering/RenderPass.s: src/Rendering/RenderPass.cpp.s
+.PHONY : src/Rendering/RenderPass.s
+
+# target to generate assembly for a file
+src/Rendering/RenderPass.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.s
+.PHONY : src/Rendering/RenderPass.cpp.s
+
+src/Resources/Buffer.o: src/Resources/Buffer.cpp.o
+.PHONY : src/Resources/Buffer.o
+
+# target to build an object file
+src/Resources/Buffer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.o
+.PHONY : src/Resources/Buffer.cpp.o
+
+src/Resources/Buffer.i: src/Resources/Buffer.cpp.i
+.PHONY : src/Resources/Buffer.i
+
+# target to preprocess a source file
+src/Resources/Buffer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.i
+.PHONY : src/Resources/Buffer.cpp.i
+
+src/Resources/Buffer.s: src/Resources/Buffer.cpp.s
+.PHONY : src/Resources/Buffer.s
+
+# target to generate assembly for a file
+src/Resources/Buffer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.s
+.PHONY : src/Resources/Buffer.cpp.s
+
+src/Resources/Image.o: src/Resources/Image.cpp.o
+.PHONY : src/Resources/Image.o
+
+# target to build an object file
+src/Resources/Image.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.o
+.PHONY : src/Resources/Image.cpp.o
+
+src/Resources/Image.i: src/Resources/Image.cpp.i
+.PHONY : src/Resources/Image.i
+
+# target to preprocess a source file
+src/Resources/Image.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.i
+.PHONY : src/Resources/Image.cpp.i
+
+src/Resources/Image.s: src/Resources/Image.cpp.s
+.PHONY : src/Resources/Image.s
+
+# target to generate assembly for a file
+src/Resources/Image.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.s
+.PHONY : src/Resources/Image.cpp.s
+
+src/Resources/Mesh.o: src/Resources/Mesh.cpp.o
+.PHONY : src/Resources/Mesh.o
+
+# target to build an object file
+src/Resources/Mesh.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.o
+.PHONY : src/Resources/Mesh.cpp.o
+
+src/Resources/Mesh.i: src/Resources/Mesh.cpp.i
+.PHONY : src/Resources/Mesh.i
+
+# target to preprocess a source file
+src/Resources/Mesh.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.i
+.PHONY : src/Resources/Mesh.cpp.i
+
+src/Resources/Mesh.s: src/Resources/Mesh.cpp.s
+.PHONY : src/Resources/Mesh.s
+
+# target to generate assembly for a file
+src/Resources/Mesh.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.s
+.PHONY : src/Resources/Mesh.cpp.s
+
+src/Sync/SyncObjects.o: src/Sync/SyncObjects.cpp.o
+.PHONY : src/Sync/SyncObjects.o
+
+# target to build an object file
+src/Sync/SyncObjects.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.o
+.PHONY : src/Sync/SyncObjects.cpp.o
+
+src/Sync/SyncObjects.i: src/Sync/SyncObjects.cpp.i
+.PHONY : src/Sync/SyncObjects.i
+
+# target to preprocess a source file
+src/Sync/SyncObjects.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.i
+.PHONY : src/Sync/SyncObjects.cpp.i
+
+src/Sync/SyncObjects.s: src/Sync/SyncObjects.cpp.s
+.PHONY : src/Sync/SyncObjects.s
+
+# target to generate assembly for a file
+src/Sync/SyncObjects.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.s
+.PHONY : src/Sync/SyncObjects.cpp.s
 
 src/VulkanApp.o: src/VulkanApp.cpp.o
 .PHONY : src/VulkanApp.o
@@ -177,6 +578,30 @@ src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
+tiny_obj_loader.o: tiny_obj_loader.cc.o
+.PHONY : tiny_obj_loader.o
+
+# target to build an object file
+tiny_obj_loader.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o
+.PHONY : tiny_obj_loader.cc.o
+
+tiny_obj_loader.i: tiny_obj_loader.cc.i
+.PHONY : tiny_obj_loader.i
+
+# target to preprocess a source file
+tiny_obj_loader.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.i
+.PHONY : tiny_obj_loader.cc.i
+
+tiny_obj_loader.s: tiny_obj_loader.cc.s
+.PHONY : tiny_obj_loader.s
+
+# target to generate assembly for a file
+tiny_obj_loader.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.s
+.PHONY : tiny_obj_loader.cc.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -185,13 +610,63 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... VulkanTutorial_autogen"
+	@echo "... VulkanTutorial_autogen_timestamp_deps"
+	@echo "... copy_compile_commands"
+	@echo "... run"
+	@echo "... run-fps"
 	@echo "... VulkanTutorial"
+	@echo "... VulkanTutorial_autogen/mocs_compilation.o"
+	@echo "... VulkanTutorial_autogen/mocs_compilation.i"
+	@echo "... VulkanTutorial_autogen/mocs_compilation.s"
+	@echo "... src/Commands/CommandManager.o"
+	@echo "... src/Commands/CommandManager.i"
+	@echo "... src/Commands/CommandManager.s"
+	@echo "... src/Core/SwapChain.o"
+	@echo "... src/Core/SwapChain.i"
+	@echo "... src/Core/SwapChain.s"
+	@echo "... src/Core/VulkanContext.o"
+	@echo "... src/Core/VulkanContext.i"
+	@echo "... src/Core/VulkanContext.s"
+	@echo "... src/Core/VulkanDebug.o"
+	@echo "... src/Core/VulkanDebug.i"
+	@echo "... src/Core/VulkanDebug.s"
+	@echo "... src/Rendering/ComputeDescriptor.o"
+	@echo "... src/Rendering/ComputeDescriptor.i"
+	@echo "... src/Rendering/ComputeDescriptor.s"
+	@echo "... src/Rendering/ComputePipeline.o"
+	@echo "... src/Rendering/ComputePipeline.i"
+	@echo "... src/Rendering/ComputePipeline.s"
+	@echo "... src/Rendering/Descriptors.o"
+	@echo "... src/Rendering/Descriptors.i"
+	@echo "... src/Rendering/Descriptors.s"
+	@echo "... src/Rendering/Pipeline.o"
+	@echo "... src/Rendering/Pipeline.i"
+	@echo "... src/Rendering/Pipeline.s"
+	@echo "... src/Rendering/RenderPass.o"
+	@echo "... src/Rendering/RenderPass.i"
+	@echo "... src/Rendering/RenderPass.s"
+	@echo "... src/Resources/Buffer.o"
+	@echo "... src/Resources/Buffer.i"
+	@echo "... src/Resources/Buffer.s"
+	@echo "... src/Resources/Image.o"
+	@echo "... src/Resources/Image.i"
+	@echo "... src/Resources/Image.s"
+	@echo "... src/Resources/Mesh.o"
+	@echo "... src/Resources/Mesh.i"
+	@echo "... src/Resources/Mesh.s"
+	@echo "... src/Sync/SyncObjects.o"
+	@echo "... src/Sync/SyncObjects.i"
+	@echo "... src/Sync/SyncObjects.s"
 	@echo "... src/VulkanApp.o"
 	@echo "... src/VulkanApp.i"
 	@echo "... src/VulkanApp.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... tiny_obj_loader.o"
+	@echo "... tiny_obj_loader.i"
+	@echo "... tiny_obj_loader.s"
 .PHONY : help
 
 

@@ -1,8 +1,8 @@
 #include <VulkanApp/Core/VulkanContext.h>
 
-#define GLFW_INCLUDE_VULKAN
+#include <QVersionNumber>
 
-#include <GLFW/glfw3.h>
+#include <vulkan/vulkan.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -110,71 +110,6 @@ bool VulkanContext::checkValidationLayerSupport() {
 	return true;
 }
 
-/// @brief Creates the vulkan instance 
-/// @param enableValidationLayers  true = activate the validation layers 
-void VulkanContext::createInstance(bool enableValidationLayers) {
-
-	if (!checkValidationLayerSupport() && enableValidationLayers)
-		throw std::runtime_error("Validation layers requested are not available!");
-
-	VkApplicationInfo appInfo{};
-	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	appInfo.pApplicationName = "Vulkan App";
-	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.pEngineName = "no engine";
-	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_0;
-
-	VkInstanceCreateInfo createInfo{};
-	createInfo.pApplicationInfo = &appInfo;
-	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-
-	// Ask glfw for platform info
-	uint32_t glfwExtensionCount = 0;
-	const char** glfwExtensions;
-	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-	auto extensions = VulkanDebug::getRequiredExtensions(enableValidationLayers);
-
-	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-	createInfo.ppEnabledExtensionNames = extensions.data();
-
-	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-	if (enableValidationLayers) {
-		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-		createInfo.ppEnabledLayerNames = validationLayers.data();
-
-		VulkanDebug::populateDebugMessengerCreateInfo(debugCreateInfo);
-		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
-	} else {
-		createInfo.enabledLayerCount = 0;
-
-		createInfo.pNext = nullptr;
-	}
-
-	if (vkCreateInstance(&createInfo, nullptr, &m_instance) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create instance!");
-	} else {
-		std::cout << "Vulkan instance created" << '\n';
-	}
-
-	if(enableValidationLayers){
-		if (m_debug.createDebugMessenger(m_instance))
-		{
-			throw std::runtime_error("failed to create debug messenger!");
-		}
-	}
-}
-
-/// @brief 
-/// @param window 
-void VulkanContext::createSurface(GLFWwindow* window){
-	if (glfwCreateWindowSurface(m_instance, window, nullptr, &m_surface) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create window surface!");
-	} else {
-		std::cout << "Window surface created!" << std::endl;
-	}
-}
 
 /// @brief Retrieve the max msaa samples possible for the current physical device
 /// @return 
@@ -372,45 +307,67 @@ void VulkanContext::createLogicalDevice(bool enableValidationLayers) {
 
 
 
-/// @brief Creates the instance then surface, chooses a physical device and create logical device
-/// @param window 
-/// @param enableValidation 
-void VulkanContext::init(GLFWwindow* window, bool enableValidation){
-	createInstance(enableValidation); 
-	createSurface(window); 
+
+void VulkanContext::init(bool enableValidation){
 	pickPhysicalDevice(); 
 	createLogicalDevice(enableValidation); 
 }
 
+void VulkanContext::prepareInstanceForWindow(QWindow* window, bool enableValidation) {
+    // Check layers support
+    if (enableValidation && !checkValidationLayerSupport())
+        throw std::runtime_error("Validation layers requested are not available!");
 
-/// @brief wait for device idle then destroys device, surfacen instance
+    if (enableValidation) {
+        m_Qinstance.setLayers({"VK_LAYER_KHRONOS_validation"});
+        m_Qinstance.setExtensions({ VK_EXT_DEBUG_UTILS_EXTENSION_NAME });
+    }
+    
+    m_Qinstance.setApiVersion(QVersionNumber(1, 2));
+
+    if (!m_Qinstance.create())
+        throw std::runtime_error("Failed to create QVulkanInstance");
+
+    // Lier l'instance à la fenêtre
+    window->setVulkanInstance(&m_Qinstance);
+    
+    // Créer la surface
+    m_surface = QVulkanInstance::surfaceForWindow(window);
+
+    // Récupérer le handle brut
+    m_instance = m_Qinstance.vkInstance(); // Pas besoin de static_cast, vkInstance() retourne un VkInstance
+
+    // Créer le debug messenger
+    if (enableValidation) {
+        if (m_debug.createDebugMessenger(m_instance) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create debug messenger!");
+        }
+    }
+}
+
+
 void VulkanContext::cleanup() noexcept {
     if (m_device != VK_NULL_HANDLE) {
         vkDeviceWaitIdle(m_device);
     }
 
-	if (m_device != VK_NULL_HANDLE) {
+    if (m_device != VK_NULL_HANDLE) {
         vkDestroyDevice(m_device, nullptr);
         m_device = VK_NULL_HANDLE;
     }
 
-	if (m_surface != VK_NULL_HANDLE && m_instance != VK_NULL_HANDLE) {
-        vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-        m_surface = VK_NULL_HANDLE;
-    }
-
     if (m_instance != VK_NULL_HANDLE) {
         m_debug.destroyDebugMessenger(m_instance);
-        vkDestroyInstance(m_instance, nullptr);
-        m_instance = VK_NULL_HANDLE;
     }
 
-	m_graphicsQueue = VK_NULL_HANDLE;
+    m_surface = VK_NULL_HANDLE;
+    m_instance = VK_NULL_HANDLE;
+
+    m_graphicsQueue = VK_NULL_HANDLE;
     m_presentQueue = VK_NULL_HANDLE;
     m_transferQueue = VK_NULL_HANDLE;
     m_computeQueue = VK_NULL_HANDLE;
     m_physicalDevice = VK_NULL_HANDLE;
-    m_msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 }
 
 

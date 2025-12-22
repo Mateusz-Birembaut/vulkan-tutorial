@@ -13,10 +13,11 @@ layout(binding = 0) uniform CameraUBO {
 } ubo;
 
 struct ObjectData {
-    vec4 geometry;     // xyz = pos, w = type
-    vec4 rotation;     // xyz = rot, w = shininess
-    vec4 scale;        // xyz = scale, w = radius
+    vec4 geometry; // xyz = pos, w = type
+    vec4 rotation; // xyz = rot, w = shininess
+    vec4 scale; // xyz = scale, w = radius
     vec4 materialInfo; // xyz = color, w = matID
+    vec4 pbrData; // x metal, y roughness, w refraction index
 };
 
 layout(std430, binding = 1) buffer objectBuffer {
@@ -55,6 +56,7 @@ const float BIAS = 0.001;
 const float FLT_MAX = 3.4028235e+38;
 const vec3 BACKGROUND_COLOR = vec3(0.0, 0.0, 0.0);
 
+const int MAX_REBOUNDS = 5; // set in ubo
 
 
 Intersection hit_sphere(ObjectData o, int objSSBOID, const Ray r) { 
@@ -110,7 +112,7 @@ void getBasisFromRotation(vec3 rot, out vec3 right, out vec3 up, out vec3 normal
 
     right = vec3(cy * cz, cx * sz + sx * sy * cz, sx * sz - cx * sy * cz);
     up = vec3(-cy * sz, cx * cz - sx * sy * sz, sx * cz + cx * sy * sz);
-    normal = vec3(sy, -sx * cy, cx * cy);
+    normal = normalize(vec3(sy, -sx * cy, cx * cy));
 }
 
 Intersection hit_quad(ObjectData o, int objSSBOID, const Ray r) { 
@@ -154,7 +156,7 @@ Intersection hit_obj(ObjectData o, int objSSBOID, const Ray r) {
     Intersection i;
     if(type == 0.0){ // sphere
         i = hit_sphere(o, objSSBOID, r);
-    }else if (type == 1.0){
+    }else if (type == 1.0){ // square
         i = hit_quad(o, objSSBOID, r);
     }
     return i;
@@ -176,7 +178,7 @@ Intersection intersect_basic_objs(const Ray r){
     return intersection;
 }
 
-vec3 blinn_phong(Intersection intersection){
+vec3 blinn_phong(Intersection intersection, vec3 viewPos){
     vec3 color = BACKGROUND_COLOR;
 
     if(!intersection.hit) return color;
@@ -202,7 +204,7 @@ vec3 blinn_phong(Intersection intersection){
             L = normalize(L);
         } 
 
-        vec3 V = normalize(ubo.position.xyz - intersection.position);
+        vec3 V = normalize(viewPos - intersection.position);
         vec3 H = normalize(L + V);
 
         float diff = max(dot(intersection.normal, L), 0.0);
@@ -236,10 +238,62 @@ void main() {
     Ray r;
     r.origin = ubo.position.xyz;
     r.direction = get_ray_direction(pixel_coords, screen_size);
-    
+
     Intersection intersection = intersect_basic_objs(r);
 
-    vec3 color = blinn_phong(intersection);
+    vec3 color = vec3(0.0, 0.0, 0.0);
+
+    if(intersection.hit) {
+        for(int i = 0; i < MAX_REBOUNDS; i++ ){
+            if(!intersection.hit) {
+                color = BACKGROUND_COLOR;
+                break;
+            }
+
+            ObjectData intersected =  objs[intersection.objID];
+
+            if(intersected.materialInfo.w == 1.0){ // reflective material
+                vec3 reflectedDir = reflect(r.direction, intersection.normal);
+                r.direction = reflectedDir;
+                r.origin = intersection.position + BIAS * reflectedDir;
+
+                intersection = intersect_basic_objs(r);
+            }else if(intersected.materialInfo.w == 2.0){
+                // refract inside obj
+                vec3 refractedDirIn = refract(r.direction, intersection.normal, intersected.pbrData.z);
+                r.direction = refractedDirIn;
+                r.origin = intersection.position + BIAS * refractedDirIn;
+
+                // intersection inside -> outside
+                Intersection outIntersection = hit_obj(intersected, intersection.objID, r);
+
+                // refracted inside outside
+                vec3 refractedDirOut = refract(r.direction, -outIntersection.normal, intersected.pbrData.w);
+                r.direction = refractedDirOut;
+                r.origin = outIntersection.position + BIAS * refractedDirOut;
+
+                // check total internal refraction
+                if (length(refractedDirOut) < 0.001) {  
+                    // reflect ray
+                    vec3 reflectedDir = reflect(r.direction, -outIntersection.normal);
+                    r.direction = reflectedDir;
+                    r.origin = outIntersection.position + BIAS * reflectedDir;
+                } else {
+                    r.direction = refractedDirOut;
+                    r.origin = outIntersection.position + BIAS * refractedDirOut;
+                }
+
+                intersection = intersect_basic_objs(r);
+            }else {
+                color += blinn_phong(intersection, r.origin);
+                break;
+            }
+        }
+    }else {
+        color = BACKGROUND_COLOR;
+    }
+
+
 
     
     imageStore(resultImage, pixel_coords, vec4(color, 1.0));

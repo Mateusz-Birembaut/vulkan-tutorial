@@ -63,6 +63,7 @@ CMAKE_BINARY_DIR = /home/mat/VulkanTutorial/build
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
+all: CMakeFiles/copy_compile_commands.dir/all
 all: CMakeFiles/VulkanTutorial.dir/all
 .PHONY : all
 
@@ -71,22 +72,54 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
+clean: CMakeFiles/copy_compile_commands.dir/clean
 clean: CMakeFiles/VulkanTutorial.dir/clean
+clean: CMakeFiles/run.dir/clean
+clean: CMakeFiles/run-fps.dir/clean
+clean: CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/clean
+clean: CMakeFiles/VulkanTutorial_autogen.dir/clean
 .PHONY : clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/copy_compile_commands.dir
+
+# All Build rule for target.
+CMakeFiles/copy_compile_commands.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/copy_compile_commands.dir/build.make CMakeFiles/copy_compile_commands.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/copy_compile_commands.dir/build.make CMakeFiles/copy_compile_commands.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=21 "Built target copy_compile_commands"
+.PHONY : CMakeFiles/copy_compile_commands.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/copy_compile_commands.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/mat/VulkanTutorial/build/CMakeFiles 1
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/copy_compile_commands.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/mat/VulkanTutorial/build/CMakeFiles 0
+.PHONY : CMakeFiles/copy_compile_commands.dir/rule
+
+# Convenience name for target.
+copy_compile_commands: CMakeFiles/copy_compile_commands.dir/rule
+.PHONY : copy_compile_commands
+
+# clean rule for target.
+CMakeFiles/copy_compile_commands.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/copy_compile_commands.dir/build.make CMakeFiles/copy_compile_commands.dir/clean
+.PHONY : CMakeFiles/copy_compile_commands.dir/clean
 
 #=============================================================================
 # Target rules for target CMakeFiles/VulkanTutorial.dir
 
 # All Build rule for target.
-CMakeFiles/VulkanTutorial.dir/all:
+CMakeFiles/VulkanTutorial.dir/all: CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/all
+CMakeFiles/VulkanTutorial.dir/all: CMakeFiles/VulkanTutorial_autogen.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=1,2,3 "Built target VulkanTutorial"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 "Built target VulkanTutorial"
 .PHONY : CMakeFiles/VulkanTutorial.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/VulkanTutorial.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/mat/VulkanTutorial/build/CMakeFiles 3
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/mat/VulkanTutorial/build/CMakeFiles 20
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/VulkanTutorial.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/mat/VulkanTutorial/build/CMakeFiles 0
 .PHONY : CMakeFiles/VulkanTutorial.dir/rule
@@ -99,6 +132,110 @@ VulkanTutorial: CMakeFiles/VulkanTutorial.dir/rule
 CMakeFiles/VulkanTutorial.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial.dir/build.make CMakeFiles/VulkanTutorial.dir/clean
 .PHONY : CMakeFiles/VulkanTutorial.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/run.dir
+
+# All Build rule for target.
+CMakeFiles/run.dir/all: CMakeFiles/VulkanTutorial.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num= "Built target run"
+.PHONY : CMakeFiles/run.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/run.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/mat/VulkanTutorial/build/CMakeFiles 20
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/run.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/mat/VulkanTutorial/build/CMakeFiles 0
+.PHONY : CMakeFiles/run.dir/rule
+
+# Convenience name for target.
+run: CMakeFiles/run.dir/rule
+.PHONY : run
+
+# clean rule for target.
+CMakeFiles/run.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/clean
+.PHONY : CMakeFiles/run.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/run-fps.dir
+
+# All Build rule for target.
+CMakeFiles/run-fps.dir/all: CMakeFiles/VulkanTutorial.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/run-fps.dir/build.make CMakeFiles/run-fps.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/run-fps.dir/build.make CMakeFiles/run-fps.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num= "Built target run-fps"
+.PHONY : CMakeFiles/run-fps.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/run-fps.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/mat/VulkanTutorial/build/CMakeFiles 20
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/run-fps.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/mat/VulkanTutorial/build/CMakeFiles 0
+.PHONY : CMakeFiles/run-fps.dir/rule
+
+# Convenience name for target.
+run-fps: CMakeFiles/run-fps.dir/rule
+.PHONY : run-fps
+
+# clean rule for target.
+CMakeFiles/run-fps.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/run-fps.dir/build.make CMakeFiles/run-fps.dir/clean
+.PHONY : CMakeFiles/run-fps.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir
+
+# All Build rule for target.
+CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/build.make CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/build.make CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num= "Built target VulkanTutorial_autogen_timestamp_deps"
+.PHONY : CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/mat/VulkanTutorial/build/CMakeFiles 0
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/mat/VulkanTutorial/build/CMakeFiles 0
+.PHONY : CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/rule
+
+# Convenience name for target.
+VulkanTutorial_autogen_timestamp_deps: CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/rule
+.PHONY : VulkanTutorial_autogen_timestamp_deps
+
+# clean rule for target.
+CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/build.make CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/clean
+.PHONY : CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/VulkanTutorial_autogen.dir
+
+# All Build rule for target.
+CMakeFiles/VulkanTutorial_autogen.dir/all: CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial_autogen.dir/build.make CMakeFiles/VulkanTutorial_autogen.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial_autogen.dir/build.make CMakeFiles/VulkanTutorial_autogen.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=20 "Built target VulkanTutorial_autogen"
+.PHONY : CMakeFiles/VulkanTutorial_autogen.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/VulkanTutorial_autogen.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/mat/VulkanTutorial/build/CMakeFiles 1
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/VulkanTutorial_autogen.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/mat/VulkanTutorial/build/CMakeFiles 0
+.PHONY : CMakeFiles/VulkanTutorial_autogen.dir/rule
+
+# Convenience name for target.
+VulkanTutorial_autogen: CMakeFiles/VulkanTutorial_autogen.dir/rule
+.PHONY : VulkanTutorial_autogen
+
+# clean rule for target.
+CMakeFiles/VulkanTutorial_autogen.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanTutorial_autogen.dir/build.make CMakeFiles/VulkanTutorial_autogen.dir/clean
+.PHONY : CMakeFiles/VulkanTutorial_autogen.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

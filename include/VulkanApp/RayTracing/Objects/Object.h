@@ -9,7 +9,7 @@ struct alignas(16) Object
     glm::vec4 geometry; 
 
     // x y z 
-    // w shininess
+    // w useless
     glm::vec4 rotation; 
 
     // x y z
@@ -18,7 +18,13 @@ struct alignas(16) Object
 
     // x, y, z = RGB
     // w       = mat index
-    glm::vec4 materialInfo;
+    glm::vec4 albedoInfo;
 
+    // x = metallic 
+    // y = roughness
+    // z = refractionIndex
+    // w = refractionIndexInv
+    glm::vec4 pbrData;
+    
     
 };

@@ -48,12 +48,11 @@ rule RERUN_CMAKE
 
 
 #############################################
-# Rule for re-checking globbed directories.
+# Rule for cleaning additional files.
 
-rule VERIFY_GLOBS
-  command = /usr/bin/cmake -P /home/mat/VulkanTutorial/build/CMakeFiles/VerifyGlobs.cmake
-  description = Re-checking globbed directories...
-  generator = 1
+rule CLEAN_ADDITIONAL
+  command = /usr/bin/cmake -DCONFIG=$CONFIG -P CMakeFiles/clean_additional.cmake
+  description = Cleaning additional files...
 
 
 #############################################

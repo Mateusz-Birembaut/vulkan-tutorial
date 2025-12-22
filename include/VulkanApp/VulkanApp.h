@@ -1,25 +1,31 @@
 #pragma once
 
-#include <VulkanApp/Core/VulkanContext.h>
 #include <VulkanApp/Core/SwapChain.h>
+#include <VulkanApp/Core/VulkanContext.h>
 
-#include <VulkanApp/Rendering/Pipeline.h>
-#include <VulkanApp/Rendering/RenderPass.h>
-#include <VulkanApp/Rendering/Descriptors.h>
 #include <VulkanApp/Commands/CommandManager.h>
-#include <VulkanApp/Resources/Buffer.h>
-#include <VulkanApp/Resources/Image.h>
-#include <VulkanApp/Sync/SyncObjects.h>
+#include <VulkanApp/RayTracing/Objects/Light.h>
 #include <VulkanApp/RayTracing/Objects/Object.h>
-#include <VulkanApp/Resources/Mesh.h>
 #include <VulkanApp/Rendering/ComputeDescriptor.h>
 #include <VulkanApp/Rendering/ComputePipeline.h>
-#include <VulkanApp/RayTracing/Objects/Light.h>
+#include <VulkanApp/Rendering/Descriptors.h>
+#include <VulkanApp/Rendering/Pipeline.h>
+#include <VulkanApp/Rendering/RenderPass.h>
+#include <VulkanApp/Resources/Buffer.h>
+#include <VulkanApp/Resources/Image.h>
+#include <VulkanApp/Resources/Mesh.h>
+#include <VulkanApp/Sync/SyncObjects.h>
 
 #include "Camera.h"
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include <QEvent>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QResizeEvent>
+#include <QWindow>
+#include <QSet>
+#include <QElapsedTimer>
+
 #include <cstdlib>
 #include <iostream>
 #include <optional>
@@ -41,34 +47,38 @@ constexpr bool enableValidationLayers = false;
 constexpr bool enableValidationLayers = true;
 #endif // NDEBUG
 
-class VulkanApp {
+class VulkanApp : public QWindow {
       public:
-	void run() {
-		initWindow();
-		initVulkan();
-		mainLoop();
-		cleanup();
-	}
+	VulkanApp();
+	~VulkanApp();
+
+	void init();
 
 	void setResized(bool b) {
 		m_framebufferResized = b;
 	}
 
+      protected:
+	bool event(QEvent* e) override;
+	void exposeEvent(QExposeEvent* event) override;
+
+    // Entrées
+    void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+
       private:
-
-	GLFWwindow* m_window;
-
 	VulkanContext m_context;
 	SwapChain m_swapchain;
 	ComputePipeline m_compPipeline;
 	ComputeDescriptor m_compDescriptor;
-	
+
 	std::vector<Buffer> m_uniformBuffers;
 	std::vector<Object> m_objs;
-	std::vector<Buffer> m_objSSBOs; 
+	std::vector<Buffer> m_objSSBOs;
 	std::vector<Image> m_storageImages;
 	std::vector<Light> m_lights;
-	std::vector<Buffer> m_lightSSBOs; 
+	std::vector<Buffer> m_lightSSBOs;
 
 	CommandManager m_commandManager;
 
@@ -78,7 +88,6 @@ class VulkanApp {
 
 	bool m_useCompute;
 
-	void initWindow();
 	void initVulkan();
 
 	void createUniformBuffer(uint32_t max_frames_in_flight);
@@ -89,34 +98,23 @@ class VulkanApp {
 	void insertImageBarrier(VkCommandBuffer cmd, VkImage image, VkAccessFlags srcAccess, VkAccessFlags dstAccess, VkImageLayout oldLayout, VkImageLayout newLayout, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage);
 
 	void recordCommands(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+	void drawFrame();
 
 	void recreateSwapChain();
 	void cleanupSwapChain();
 
 	void updateUniformBuffer(uint32_t currentFrame);
 
-	void recordRenderCommands(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-
-	void mainLoop();
-	void drawFrame();
-
 	void cleanup();
 
-
 	int m_currentFrame{0};
-	bool m_framebufferResized{false};// VK_ERROR_OUT_OF_DATE_KHR is not guarentee when resizing, it fixes that 
-	float m_deltaTime{0.0f};
-	double m_lastFrame{0.0};
+	bool m_framebufferResized{false}; // VK_ERROR_OUT_OF_DATE_KHR is not guarentee when resizing, it fixes that
+	QElapsedTimer m_timer;
+	QSet<int> m_keysPressed;
 	float lastX{400};
 	float lastY{300};
 	bool m_focus{false};
 
-
-	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
-	static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos);
-
 	void processInput(float dt);
-	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-	void onKey(int key, int scancode, int action, int mods);
-
+	void handleMouseLook(float xpos, float ypos);
 };

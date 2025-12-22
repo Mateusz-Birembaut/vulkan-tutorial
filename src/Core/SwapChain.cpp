@@ -1,7 +1,9 @@
 #include <VulkanApp/Core/SwapChain.h>
 
-#include <GLFW/glfw3.h>
+
 #include <vulkan/vulkan.h>
+
+#include <QWindow>
 
 #include <algorithm>
 #include <limits>
@@ -12,7 +14,7 @@
 /// @brief creates the swapchain and the image views
 /// @param context
 /// @param window
-void SwapChain::init(VulkanContext* context, GLFWwindow* window, VkImageUsageFlags usage) {
+void SwapChain::init(VulkanContext* context, QWindow* window, VkImageUsageFlags usage) {
 	m_context = context;
 	m_imageUsage = usage;
 	create(window);
@@ -21,7 +23,7 @@ void SwapChain::init(VulkanContext* context, GLFWwindow* window, VkImageUsageFla
 
 /// @brief Recreates the swapchain and its image views and frame buffers, recreation of frame buffers not called here
 /// @param window
-void SwapChain::recreate(GLFWwindow* window) {
+void SwapChain::recreate(QWindow* window) {
 	create(window);
 	createImageViews();
 }
@@ -81,13 +83,13 @@ VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentMod
 /// @param window
 /// @param capabilities
 /// @return A clamped width and height based on the max and min resolution supported
-VkExtent2D SwapChain::chooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities) {
+VkExtent2D SwapChain::chooseSwapExtent(QWindow* window, const VkSurfaceCapabilitiesKHR& capabilities) {
 	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
 		return capabilities.currentExtent;
 	} else {
-		int height;
-		int width;
-		glfwGetFramebufferSize(window, &width, &height);
+
+		int width = window->width() * window->devicePixelRatio();
+        int height = window->height() * window->devicePixelRatio();
 
 		VkExtent2D actualExtent{
 		    static_cast<uint32_t>(width),
@@ -102,7 +104,7 @@ VkExtent2D SwapChain::chooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabi
 }
 
 
-void SwapChain::create(GLFWwindow* window) {
+void SwapChain::create(QWindow* window) {
 
 	SwapChainSupportDetails swapChainSupport{m_context->getSwapChainSupport()};
 

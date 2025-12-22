@@ -1,5 +1,3 @@
-
-#define GLFW_INCLUDE_VULKAN
 #define STB_IMAGE_IMPLEMENTATION
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE // depth range [0, 1] au lieu de [-1, 1]
@@ -16,7 +14,6 @@
 #include "stb_image.h"
 #include "tiny_obj_loader.h"
 
-#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -28,113 +25,57 @@
 #include <limits>
 #include <string>
 
-
-void VulkanApp::initWindow() {
-	glfwInit(); // init la lib
-
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // ne pas créer de context openGL
-
-	m_window = glfwCreateWindow(g_screen_width, g_screen_height, "Vulkan App", nullptr, nullptr);
-	glfwSetWindowUserPointer(m_window, this);
-
-	glfwSetFramebufferSizeCallback(m_window, VulkanApp::framebufferResizeCallback);
-
-	glfwSetCursorPosCallback(m_window, VulkanApp::cursorPosCallback );
-	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); 
-
-	//glfwSetKeyCallback(m_window, VulkanApp::keyCallback);
-
+VulkanApp::VulkanApp(){
+    setSurfaceType(QSurface::VulkanSurface);
+    resize(800, 600);
+    setTitle("Vulkan RT App");
+	m_timer.start();
+    
+    setCursor(Qt::ArrowCursor);
 }
 
-void VulkanApp::cursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
-	auto app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
-	if(!app->m_focus) return;
+VulkanApp::~VulkanApp(){
+    vkDeviceWaitIdle(m_context.getDevice());
 
-	float offsetX = app->lastX - xpos;
-	float offsetY = app->lastY - ypos;
-	app->lastX = xpos;
-	app->lastY = ypos;
-	Camera& cam = app->m_camera;
+	cleanupSwapChain();
 
-	float yawDelta = glm::radians(offsetX * cam.getSensitivity());
-	float pitchDelta = glm::radians(offsetY * cam.getSensitivity());
+	for (size_t i = 0; i < g_max_frames_in_flight; i++) {
+		m_uniformBuffers[i].cleanup();
+	}
 
-	glm::quat qYaw = glm::angleAxis(yawDelta, glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::quat qPitch = glm::angleAxis(pitchDelta, glm::vec3(1.0f, 0.0f, 0.0f));
+	for (auto& ssbo : m_objSSBOs) {
+		ssbo.cleanup();
+	}
 
-	glm::quat finalRotation = qYaw * cam.getRotation() * qPitch;
+	for (auto& ssbo : m_lightSSBOs) {
+		ssbo.cleanup();
+	}
 
-	cam.setRotation(finalRotation);
+	m_syncObjects.cleanup();
+
+	m_commandManager.cleanup();
+
+	m_compPipeline.cleanup();
+
+	m_context.cleanup();
 }
 
-void VulkanApp::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
-	if (app) app->onKey(key, scancode, action, mods);
+void VulkanApp::init(){
+	m_context.prepareInstanceForWindow(this, enableValidationLayers); // Qinstance and surface defined in context
+
+	initVulkan();
 }
-
-
-void VulkanApp::onKey(int key, int scancode, int action, int mods) {
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-		glfwSetWindowShouldClose(m_window, GLFW_TRUE);
-	}
-}
-
-void VulkanApp::processInput(float dt) {
-
-	if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS || glfwGetKey(m_window, GLFW_KEY_Z) == GLFW_PRESS) {
-		m_camera.setPosition(m_camera.getPosition() + m_camera.getForward() * (m_camera.getSpeed() * dt));
-	}
-	if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS) {
-		m_camera.setPosition(m_camera.getPosition() - m_camera.getForward() * (m_camera.getSpeed() * dt));
-	}
-	if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS) {
-		m_camera.setPosition(m_camera.getPosition() + m_camera.getRight() * (m_camera.getSpeed() * dt));
-	}
-	if (glfwGetKey(m_window, GLFW_KEY_Q) == GLFW_PRESS || glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS) {
-		m_camera.setPosition(m_camera.getPosition() - m_camera.getRight() * (m_camera.getSpeed() * dt));
-	}
-	if (glfwGetKey(m_window, GLFW_KEY_ESCAPE)) {
-		m_focus = false;
-		glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); 
-	}
-	if (glfwGetKey(m_window, GLFW_KEY_ENTER)) {
-		m_focus = true;
-		glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); 
-	}
-}
-
-void VulkanApp::mainLoop() {
-
-	while (!glfwWindowShouldClose(m_window)) {
-
-		double current = glfwGetTime();
-		m_deltaTime = static_cast<float>(current - m_lastFrame);
-		m_lastFrame = current;
-
-		processInput(m_deltaTime);
-		glfwPollEvents();
-		drawFrame();
-	}
-
-	vkDeviceWaitIdle(m_context.getDevice());
-}
-
-void VulkanApp::framebufferResizeCallback(GLFWwindow* window, int width, int height) {
-	auto app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
-	app->setResized(true);
-}
-
 
 void VulkanApp::initVulkan() {
 
-	m_context.init(m_window, true);
+	m_context.init(true);
 	if(m_context.getComputeQueue() != VK_NULL_HANDLE && m_context.getComputeQueue() != m_context.getGraphicsQueue()){
 		m_useCompute = true;
 	}else {
 		m_useCompute = false;
 	}
 
-	m_swapchain.init(&m_context, m_window, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+	m_swapchain.init(&m_context, this, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
 	m_commandManager.init(&m_context, g_max_frames_in_flight);
 
@@ -174,53 +115,69 @@ void VulkanApp::createObjectsSSBOs(uint32_t max_frames_in_flight){
 	float halfHeight = 3.0f;  // half height
 	float depth = 6.0f;       // half depth (used to position back wall)
 
-	// Back wall (blue)
-	Object back;
-	back.geometry = glm::vec4(0.0f, 0.0f, -depth, 1.0f); // type = 1.0 -> quad
-	back.rotation = glm::vec4(0.0f, 0.0f, 0.0f, 32.0f); // rotation.xyz, w = shininess
-	back.scale = glm::vec4(halfWidth, halfHeight, 0.0f, 0.0f); // half-size x,y
-	back.materialInfo = glm::vec4(0.0f, 0.2f, 1.0f, 0.0f);
-	m_objs.push_back(back);
 
-	// Floor (dark gray)
-	Object floorObj;
-	floorObj.geometry = glm::vec4(0.0f, -halfHeight, -depth/2.0f, 1.0f);
-	floorObj.rotation = glm::vec4(-PI*0.5f, 0.0f, 0.0f, 32.0f); // rotate so normal = +Y, shininess
-	floorObj.scale = glm::vec4(halfWidth, depth * 0.5f, 0.0f, 0.0f); // span width x depth (half-sizes expected by shader)
-	floorObj.materialInfo = glm::vec4(0.2f, 0.2f, 0.2f, 0.0f);
-	m_objs.push_back(floorObj);
+    // Back wall (blue)
+    Object back;
+    back.geometry = glm::vec4(0.0f, 0.0f, -depth, 1.0f); // type = 1.0 -> quad
+    back.rotation = glm::vec4(0.0f, 0.0f, 0.0f, 32.0f); // rotation.xyz, w = shininess
+    back.scale = glm::vec4(halfWidth, halfHeight, 0.0f, 0.0f); // half-size x,y
+    back.albedoInfo = glm::vec4(0.0f, 0.2f, 1.0f, 0.0f);
+    back.pbrData = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f); // metallic=0, roughness=0.5, refractionIndex=1.0, refractionIndexInv=1.0
+    m_objs.push_back(back);
 
-	// Ceiling (light gray)
-	Object ceilObj;
-	ceilObj.geometry = glm::vec4(0.0f, halfHeight, -depth/2.0f, 1.0f);
-	ceilObj.rotation = glm::vec4(PI*0.5f, 0.0f, 0.0f, 32.0f); // normal = -Y, shininess
-	ceilObj.scale = glm::vec4(halfWidth, depth * 0.5f, 0.0f, 0.0f);
-	ceilObj.materialInfo = glm::vec4(0.9f, 0.9f, 0.9f, 0.0f);
-	m_objs.push_back(ceilObj);
+    // Floor (dark gray)
+    Object floorObj;
+    floorObj.geometry = glm::vec4(0.0f, -halfHeight, -depth/2.0f, 1.0f);
+    floorObj.rotation = glm::vec4(-PI*0.5f, 0.0f, 0.0f, 32.0f); // rotate so normal = +Y, shininess
+    floorObj.scale = glm::vec4(halfWidth, depth * 0.5f, 0.0f, 0.0f); // span width x depth (half-sizes expected by shader)
+    floorObj.albedoInfo = glm::vec4(0.2f, 0.2f, 0.2f, 0.0f);
+    floorObj.pbrData = glm::vec4(0.0f, 0.8f, 1.0f, 1.0f); // metallic=0, roughness=0.8, refractionIndex=1.0, refractionIndexInv=1.0
+    m_objs.push_back(floorObj);
 
-	// Left wall (red)
-	Object left;
-	left.geometry = glm::vec4(-halfWidth, 0.0f, -depth/2.0f, 1.0f);
-	left.rotation = glm::vec4(0.0f, +PI*0.5f, 0.0f, 32.0f); // normal = -X, shininess
-	left.scale = glm::vec4(depth * 0.5f, halfHeight, 0.0f, 0.0f); // span depth x height (half-sizes expected)
-	left.materialInfo = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
-	m_objs.push_back(left);
+    // Ceiling (light gray)
+    Object ceilObj;
+    ceilObj.geometry = glm::vec4(0.0f, halfHeight, -depth/2.0f, 1.0f);
+    ceilObj.rotation = glm::vec4(PI*0.5f, 0.0f, 0.0f, 32.0f); // normal = -Y, shininess
+    ceilObj.scale = glm::vec4(halfWidth, depth * 0.5f, 0.0f, 0.0f);
+    ceilObj.albedoInfo = glm::vec4(0.9f, 0.9f, 0.9f, 0.0f);
+    ceilObj.pbrData = glm::vec4(0.0f, 0.2f, 1.0f, 1.0f); // metallic=0, roughness=0.2, refractionIndex=1.0, refractionIndexInv=1.0
+    m_objs.push_back(ceilObj);
 
-	// Right wall (green)
-	Object right;
-	right.geometry = glm::vec4(halfWidth, 0.0f, -depth/2.0f, 1.0f);
-	right.rotation = glm::vec4(0.0f, -PI*0.5f, 0.0f, 32.0f); // normal = +X, shininess
-	right.scale = glm::vec4(depth * 0.5f, halfHeight, 0.0f, 0.0f);
-	right.materialInfo = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-	m_objs.push_back(right);
+    // Left wall (red)
+    Object left;
+    left.geometry = glm::vec4(-halfWidth, 0.0f, -depth/2.0f, 1.0f);
+    left.rotation = glm::vec4(0.0f, +PI*0.5f, 0.0f, 32.0f); // normal = -X, shininess
+    left.scale = glm::vec4(depth * 0.5f, halfHeight, 0.0f, 0.0f); // span depth x height (half-sizes expected)
+    left.albedoInfo = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+    left.pbrData = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f); // metallic=0, roughness=0.5, refractionIndex=1.0, refractionIndexInv=1.0
+    m_objs.push_back(left);
 
-	// Central sphere (type = 0, yellow)
-	Object sphereObj;
-	sphereObj.geometry = glm::vec4(0.0f, 0.0f, -depth/2.0f, 0.0f); // type 0 = sphere
-	sphereObj.scale = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); // w = radius
-	sphereObj.rotation = glm::vec4(0.0f, 0.0f, 0.0f, 32.0f); // shininess
-	sphereObj.materialInfo = glm::vec4(1.0f, 1.0f, 0.0f, 0.0f);
-	m_objs.push_back(sphereObj);
+    // Right wall (green)
+    Object right;
+    right.geometry = glm::vec4(halfWidth, 0.0f, -depth/2.0f, 1.0f);
+    right.rotation = glm::vec4(0.0f, -PI*0.5f, 0.0f, 32.0f); // normal = +X, shininess
+    right.scale = glm::vec4(depth * 0.5f, halfHeight, 0.0f, 0.0f);
+    right.albedoInfo = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f); // Note: matID=1.0 pour réflexion
+    right.pbrData = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f); // metallic=1.0, roughness=0.0, refractionIndex=1.0, refractionIndexInv=1.0
+    m_objs.push_back(right);
+
+    Object sphereObj2;
+    sphereObj2.geometry = glm::vec4(1.5f, 0.0f, -depth/2.0f, 0.0f); // position on the right
+    sphereObj2.scale = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); // w = radius
+    sphereObj2.rotation = glm::vec4(0.0f, 0.0f, 0.0f, 32.0f); // shininess
+    sphereObj2.albedoInfo = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f); // reflective
+    sphereObj2.pbrData = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f); // metallic=1.0, roughness=0.0, refractionIndex=1.0, refractionIndexInv=1.0
+    m_objs.push_back(sphereObj2);
+
+    // Third sphere (type = 0, yellow, refractive) on the left
+    Object sphereObj3;
+    sphereObj3.geometry = glm::vec4(-1.5f, 0.0f, -depth/2.0f, 0.0f); // position on the left
+    sphereObj3.scale = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); // w = radius
+    sphereObj3.rotation = glm::vec4(0.0f, 0.0f, 0.0f, 32.0f); // shininess
+    sphereObj3.albedoInfo = glm::vec4(1.0f, 1.0f, 0.0f, 2.0f); // refractive
+    sphereObj3.pbrData = glm::vec4(0.0f, 0.0f, 1.0/1.5f, 1.5f); // metallic=0.0, roughness=0.0, refractionIndex=1.5, refractionIndexInv=0.6667
+    m_objs.push_back(sphereObj3);
+
 
 	m_objSSBOs.clear();
 	m_objSSBOs.resize(max_frames_in_flight);
@@ -366,7 +323,7 @@ void VulkanApp::recordCommands(VkCommandBuffer commandBuffer, uint32_t imageInde
 		VK_ACCESS_TRANSFER_WRITE_BIT, // we want to read to transfert data 
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, // we want to take write data here
-		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // synchronise with the end of compute shader
+		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // synchronise with the end of compute shader
 		VK_PIPELINE_STAGE_TRANSFER_BIT); // ready for transfert
 
 	// copy img
@@ -424,25 +381,23 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage) {
 
 }
 
-void VulkanApp::recreateSwapChain() {
-	int width = 0;
-	int height = 0;
-	glfwGetFramebufferSize(m_window, &width, &height);
-	while (width == 0 || height == 0) {
-		glfwGetFramebufferSize(m_window, &width, &height);
-		glfwWaitEvents();
-	}
+ void VulkanApp::recreateSwapChain() {
+    int w = width() * devicePixelRatio();
+    int h = height() * devicePixelRatio();
 
-	vkDeviceWaitIdle(m_context.getDevice());
+    if (w <= 0 || h <= 0) { // if minimized do nothing
+        return; 
+    }
 
-	cleanupSwapChain();
+    vkDeviceWaitIdle(m_context.getDevice());
 
-	m_swapchain.recreate(m_window);
+    cleanupSwapChain();
 
-	createImageStorage(g_max_frames_in_flight);
+    m_swapchain.recreate(this); 
 
-	m_compDescriptor.init(&m_context, g_max_frames_in_flight, m_uniformBuffers, m_objSSBOs, m_lightSSBOs, m_storageImages);
+    createImageStorage(g_max_frames_in_flight);
 
+    m_compDescriptor.init(&m_context, g_max_frames_in_flight, m_uniformBuffers, m_objSSBOs, m_lightSSBOs, m_storageImages);
 }
 
 void VulkanApp::drawFrame() {
@@ -557,6 +512,10 @@ void VulkanApp::cleanup() {
 		m_uniformBuffers[i].cleanup();
 	}
 
+	for (auto& b : m_uniformBuffers){
+		 b.cleanup();
+	}
+
 	for (auto& ssbo : m_objSSBOs) {
 		ssbo.cleanup();
 	}
@@ -572,7 +531,95 @@ void VulkanApp::cleanup() {
 	m_compPipeline.cleanup();
 
 	m_context.cleanup();
+}
 
-	glfwDestroyWindow(m_window);
-	glfwTerminate();
+
+void VulkanApp::exposeEvent(QExposeEvent *event) {
+    if (isExposed()) {
+        m_timer.start(); 
+        requestUpdate();
+    }
+}
+
+void VulkanApp::keyPressEvent(QKeyEvent *event) {
+    if (event->key() == Qt::Key_Escape) {
+        m_focus = false;
+        setCursor(Qt::ArrowCursor);
+    }
+    else if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+        m_focus = true;
+        setCursor(Qt::BlankCursor);
+        
+        QPoint center = mapToGlobal(QPoint(width() / 2, height() / 2));
+        QCursor::setPos(center);
+        lastX = width() / 2.0f;
+        lastY = height() / 2.0f;
+    }
+
+    m_keysPressed.insert(event->key());
+}
+
+void VulkanApp::processInput(float dt) {
+    if (m_keysPressed.contains(Qt::Key_W) || m_keysPressed.contains(Qt::Key_Z)) {
+        m_camera.setPosition(m_camera.getPosition() + m_camera.getForward() * (m_camera.getSpeed() * dt));
+    }
+    if (m_keysPressed.contains(Qt::Key_S)) {
+        m_camera.setPosition(m_camera.getPosition() - m_camera.getForward() * (m_camera.getSpeed() * dt));
+    }
+    if (m_keysPressed.contains(Qt::Key_D)) {
+        m_camera.setPosition(m_camera.getPosition() + m_camera.getRight() * (m_camera.getSpeed() * dt));
+    }
+    if (m_keysPressed.contains(Qt::Key_Q) || m_keysPressed.contains(Qt::Key_A)) {
+        m_camera.setPosition(m_camera.getPosition() - m_camera.getRight() * (m_camera.getSpeed() * dt));
+    }
+}
+
+void VulkanApp::mouseMoveEvent(QMouseEvent *event) {
+    if (!m_focus) return;
+
+    int centerX = width() / 2;
+    int centerY = height() / 2;
+
+    int x = static_cast<int>(event->position().x());
+    int y = static_cast<int>(event->position().y());
+
+    if (x == centerX && y == centerY) return;
+
+    float offsetX = static_cast<float>(centerX - x);
+    float offsetY = static_cast<float>(centerY - y);
+
+    Camera& cam = m_camera;
+    float yawDelta = glm::radians(offsetX * cam.getSensitivity());
+    float pitchDelta = glm::radians(offsetY * cam.getSensitivity());
+
+    glm::quat qYaw = glm::angleAxis(yawDelta, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::quat qPitch = glm::angleAxis(pitchDelta, glm::vec3(1.0f, 0.0f, 0.0f));
+
+    glm::quat finalRotation = qYaw * cam.getRotation() * qPitch;
+    cam.setRotation(finalRotation);
+
+    QPoint globalCenter = mapToGlobal(QPoint(centerX, centerY));
+    QCursor::setPos(globalCenter);
+}
+
+
+bool VulkanApp::event(QEvent *e) {
+    if (e->type() == QEvent::UpdateRequest) {
+
+		float dt = m_timer.nsecsElapsed() / 1.0e9f;
+        m_timer.restart();
+
+		processInput(dt);
+
+        drawFrame(); 
+
+        requestUpdate(); 
+
+        return true;
+    }
+    return QWindow::event(e);
+}
+
+void VulkanApp::keyReleaseEvent(QKeyEvent *event) {
+    m_keysPressed.remove(event->key());
 }

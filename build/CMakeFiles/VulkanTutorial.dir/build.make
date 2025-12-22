@@ -69,24 +69,213 @@ include CMakeFiles/VulkanTutorial.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/VulkanTutorial.dir/flags.make
 
-CMakeFiles/VulkanTutorial.dir/src/main.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
-CMakeFiles/VulkanTutorial.dir/src/main.cpp.o: /home/mat/VulkanTutorial/src/main.cpp
-CMakeFiles/VulkanTutorial.dir/src/main.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/main.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/main.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/main.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/main.cpp.o -c /home/mat/VulkanTutorial/src/main.cpp
+VulkanTutorial_autogen/timestamp: /usr/lib/qt6/libexec/moc
+VulkanTutorial_autogen/timestamp: /usr/lib/qt6/libexec/uic
+VulkanTutorial_autogen/timestamp: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Automatic MOC and UIC for target VulkanTutorial"
+	/usr/bin/cmake -E cmake_autogen /home/mat/VulkanTutorial/build/CMakeFiles/VulkanTutorial_autogen.dir/AutogenInfo.json Debug
+	/usr/bin/cmake -E touch /home/mat/VulkanTutorial/build/VulkanTutorial_autogen/timestamp
 
-CMakeFiles/VulkanTutorial.dir/src/main.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/src/main.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/src/main.cpp > CMakeFiles/VulkanTutorial.dir/src/main.cpp.i
+CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.o: VulkanTutorial_autogen/mocs_compilation.cpp
+CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.o -MF CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.o -c /home/mat/VulkanTutorial/build/VulkanTutorial_autogen/mocs_compilation.cpp
 
-CMakeFiles/VulkanTutorial.dir/src/main.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/main.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/main.cpp -o CMakeFiles/VulkanTutorial.dir/src/main.cpp.s
+CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/build/VulkanTutorial_autogen/mocs_compilation.cpp > CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.i
+
+CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/build/VulkanTutorial_autogen/mocs_compilation.cpp -o CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.s
+
+CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.o: /home/mat/VulkanTutorial/src/Commands/CommandManager.cpp
+CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.o -c /home/mat/VulkanTutorial/src/Commands/CommandManager.cpp
+
+CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/src/Commands/CommandManager.cpp > CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.i
+
+CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/Commands/CommandManager.cpp -o CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.s
+
+CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o: /home/mat/VulkanTutorial/src/Core/SwapChain.cpp
+CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o -c /home/mat/VulkanTutorial/src/Core/SwapChain.cpp
+
+CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/src/Core/SwapChain.cpp > CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.i
+
+CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/Core/SwapChain.cpp -o CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.s
+
+CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o: /home/mat/VulkanTutorial/src/Core/VulkanContext.cpp
+CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o -c /home/mat/VulkanTutorial/src/Core/VulkanContext.cpp
+
+CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/src/Core/VulkanContext.cpp > CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.i
+
+CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/Core/VulkanContext.cpp -o CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.s
+
+CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o: /home/mat/VulkanTutorial/src/Core/VulkanDebug.cpp
+CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o -c /home/mat/VulkanTutorial/src/Core/VulkanDebug.cpp
+
+CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/src/Core/VulkanDebug.cpp > CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.i
+
+CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/Core/VulkanDebug.cpp -o CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.s
+
+CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.o: /home/mat/VulkanTutorial/src/Rendering/ComputeDescriptor.cpp
+CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.o -c /home/mat/VulkanTutorial/src/Rendering/ComputeDescriptor.cpp
+
+CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/src/Rendering/ComputeDescriptor.cpp > CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.i
+
+CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/Rendering/ComputeDescriptor.cpp -o CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.s
+
+CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.o: /home/mat/VulkanTutorial/src/Rendering/ComputePipeline.cpp
+CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.o -c /home/mat/VulkanTutorial/src/Rendering/ComputePipeline.cpp
+
+CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/src/Rendering/ComputePipeline.cpp > CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.i
+
+CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/Rendering/ComputePipeline.cpp -o CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.s
+
+CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.o: /home/mat/VulkanTutorial/src/Rendering/Descriptors.cpp
+CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.o -c /home/mat/VulkanTutorial/src/Rendering/Descriptors.cpp
+
+CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/src/Rendering/Descriptors.cpp > CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.i
+
+CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/Rendering/Descriptors.cpp -o CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.s
+
+CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.o: /home/mat/VulkanTutorial/src/Rendering/Pipeline.cpp
+CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.o -c /home/mat/VulkanTutorial/src/Rendering/Pipeline.cpp
+
+CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/src/Rendering/Pipeline.cpp > CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.i
+
+CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/Rendering/Pipeline.cpp -o CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.s
+
+CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.o: /home/mat/VulkanTutorial/src/Rendering/RenderPass.cpp
+CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.o -c /home/mat/VulkanTutorial/src/Rendering/RenderPass.cpp
+
+CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/src/Rendering/RenderPass.cpp > CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.i
+
+CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/Rendering/RenderPass.cpp -o CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.s
+
+CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.o: /home/mat/VulkanTutorial/src/Resources/Buffer.cpp
+CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.o -c /home/mat/VulkanTutorial/src/Resources/Buffer.cpp
+
+CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/src/Resources/Buffer.cpp > CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.i
+
+CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/Resources/Buffer.cpp -o CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.s
+
+CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.o: /home/mat/VulkanTutorial/src/Resources/Image.cpp
+CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.o -c /home/mat/VulkanTutorial/src/Resources/Image.cpp
+
+CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/src/Resources/Image.cpp > CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.i
+
+CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/Resources/Image.cpp -o CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.s
+
+CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.o: /home/mat/VulkanTutorial/src/Resources/Mesh.cpp
+CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.o -c /home/mat/VulkanTutorial/src/Resources/Mesh.cpp
+
+CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/src/Resources/Mesh.cpp > CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.i
+
+CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/Resources/Mesh.cpp -o CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.s
+
+CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.o: /home/mat/VulkanTutorial/src/Sync/SyncObjects.cpp
+CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.o -c /home/mat/VulkanTutorial/src/Sync/SyncObjects.cpp
+
+CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/src/Sync/SyncObjects.cpp > CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.i
+
+CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/Sync/SyncObjects.cpp -o CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.s
 
 CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
 CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o: /home/mat/VulkanTutorial/src/VulkanApp.cpp
 CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o -c /home/mat/VulkanTutorial/src/VulkanApp.cpp
 
 CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.i: cmake_force
@@ -97,21 +286,83 @@ CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/VulkanApp.cpp -o CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.s
 
+CMakeFiles/VulkanTutorial.dir/src/main.cpp.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/src/main.cpp.o: /home/mat/VulkanTutorial/src/main.cpp
+CMakeFiles/VulkanTutorial.dir/src/main.cpp.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/VulkanTutorial.dir/src/main.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/src/main.cpp.o -MF CMakeFiles/VulkanTutorial.dir/src/main.cpp.o.d -o CMakeFiles/VulkanTutorial.dir/src/main.cpp.o -c /home/mat/VulkanTutorial/src/main.cpp
+
+CMakeFiles/VulkanTutorial.dir/src/main.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/src/main.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/src/main.cpp > CMakeFiles/VulkanTutorial.dir/src/main.cpp.i
+
+CMakeFiles/VulkanTutorial.dir/src/main.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/src/main.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/src/main.cpp -o CMakeFiles/VulkanTutorial.dir/src/main.cpp.s
+
+CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o: CMakeFiles/VulkanTutorial.dir/flags.make
+CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o: /home/mat/VulkanTutorial/tiny_obj_loader.cc
+CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o: CMakeFiles/VulkanTutorial.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o -MF CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o.d -o CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o -c /home/mat/VulkanTutorial/tiny_obj_loader.cc
+
+CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mat/VulkanTutorial/tiny_obj_loader.cc > CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.i
+
+CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mat/VulkanTutorial/tiny_obj_loader.cc -o CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.s
+
 # Object files for target VulkanTutorial
 VulkanTutorial_OBJECTS = \
+"CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.o" \
+"CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.o" \
+"CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o" \
+"CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o" \
+"CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o" \
+"CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.o" \
+"CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.o" \
+"CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.o" \
+"CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.o" \
+"CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.o" \
+"CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.o" \
+"CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.o" \
+"CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.o" \
+"CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.o" \
+"CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o" \
 "CMakeFiles/VulkanTutorial.dir/src/main.cpp.o" \
-"CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o"
+"CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o"
 
 # External object files for target VulkanTutorial
 VulkanTutorial_EXTERNAL_OBJECTS =
 
-VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/main.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/VulkanTutorial_autogen/mocs_compilation.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/Commands/CommandManager.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/Core/SwapChain.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/Core/VulkanContext.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/Core/VulkanDebug.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputeDescriptor.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/Rendering/ComputePipeline.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/Rendering/Descriptors.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/Rendering/Pipeline.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/Rendering/RenderPass.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/Resources/Buffer.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/Resources/Image.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/Resources/Mesh.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/Sync/SyncObjects.cpp.o
 VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/VulkanApp.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/src/main.cpp.o
+VulkanTutorial: CMakeFiles/VulkanTutorial.dir/tiny_obj_loader.cc.o
 VulkanTutorial: CMakeFiles/VulkanTutorial.dir/build.make
 VulkanTutorial: /usr/lib/x86_64-linux-gnu/libvulkan.so
-VulkanTutorial: /usr/lib/x86_64-linux-gnu/libglfw.so.3.3
+VulkanTutorial: /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2
+VulkanTutorial: /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2
+VulkanTutorial: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
+VulkanTutorial: /usr/lib/x86_64-linux-gnu/libGLX.so
+VulkanTutorial: /usr/lib/x86_64-linux-gnu/libOpenGL.so
 VulkanTutorial: CMakeFiles/VulkanTutorial.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX executable VulkanTutorial"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/mat/VulkanTutorial/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Linking CXX executable VulkanTutorial"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/VulkanTutorial.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -122,7 +373,7 @@ CMakeFiles/VulkanTutorial.dir/clean:
 	$(CMAKE_COMMAND) -P CMakeFiles/VulkanTutorial.dir/cmake_clean.cmake
 .PHONY : CMakeFiles/VulkanTutorial.dir/clean
 
-CMakeFiles/VulkanTutorial.dir/depend:
+CMakeFiles/VulkanTutorial.dir/depend: VulkanTutorial_autogen/timestamp
 	cd /home/mat/VulkanTutorial/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/mat/VulkanTutorial /home/mat/VulkanTutorial /home/mat/VulkanTutorial/build /home/mat/VulkanTutorial/build /home/mat/VulkanTutorial/build/CMakeFiles/VulkanTutorial.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : CMakeFiles/VulkanTutorial.dir/depend
 

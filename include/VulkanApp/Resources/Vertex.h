@@ -2,9 +2,8 @@
 #define VERTEX_H
 
 #define GLM_ENABLE_EXPERIMENTAL
-#define GLFW_INCLUDE_VULKAN
+#include <vulkan/vulkan.h>
 #include <glm/gtx/hash.hpp>
-#include <GLFW/glfw3.h>
 #include <array>
 #include <glm/glm.hpp>
 #include <vector>

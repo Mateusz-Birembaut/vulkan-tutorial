@@ -1,8 +1,8 @@
 #include <VulkanApp/Debug/VulkanDebug.h>
 
-#include <GLFW/glfw3.h>
-
 #include <iostream>
+
+#include <vulkan/vulkan.h>
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -67,15 +67,12 @@ void VulkanDebug::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateIn
 }
 
 std::vector<const char*> VulkanDebug::getRequiredExtensions(bool enableValidation) {
-	uint32_t glfwExtensionCount = 0;
-	const char** glfwExtensions;
-	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
+	// When using QVulkanInstance or other windowing systems, the platform-specific
+	// instance extensions are provided by that system. For a fallback here we only
+	// add the debug utils extension when requested.
+	std::vector<const char*> extensions;
 	if (enableValidation) {
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
-
 	return extensions;
-}
+} 

@@ -1,5 +1,8 @@
+/home/mat/VulkanTutorial/build/CMakeFiles/copy_compile_commands.dir
 /home/mat/VulkanTutorial/build/CMakeFiles/VulkanTutorial.dir
 /home/mat/VulkanTutorial/build/CMakeFiles/run.dir
 /home/mat/VulkanTutorial/build/CMakeFiles/run-fps.dir
 /home/mat/VulkanTutorial/build/CMakeFiles/edit_cache.dir
 /home/mat/VulkanTutorial/build/CMakeFiles/rebuild_cache.dir
+/home/mat/VulkanTutorial/build/CMakeFiles/VulkanTutorial_autogen_timestamp_deps.dir
+/home/mat/VulkanTutorial/build/CMakeFiles/VulkanTutorial_autogen.dir

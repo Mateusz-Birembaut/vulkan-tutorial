@@ -1,8 +1,7 @@
 #include <VulkanApp/VulkanApp.h>
 
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include <QApplication>
 
 #include <cstdlib>
 #include <iostream>
@@ -11,15 +10,13 @@
 #include <vector>
 #include <set>
 
-int main() {
-	VulkanApp app;
+int main(int argc, char *argv[]) {
+	QApplication app(argc, argv);
 
-	try {
-		app.run();
-	} catch (const std::exception& e) {
-		std::cerr << e.what() << std::endl;
-		return EXIT_FAILURE;
-	}
+	VulkanApp vulkanWindow;
+    vulkanWindow.show(); 
+    vulkanWindow.init(); 
 
-	return EXIT_SUCCESS;
+    return app.exec();
+
 }

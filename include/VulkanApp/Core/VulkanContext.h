@@ -3,11 +3,18 @@
 
 #include <VulkanApp/Debug/VulkanDebug.h>
 
-#include <GLFW/glfw3.h>
+
 #include <vulkan/vulkan.h>
+
+#include <QVulkanInstance>
+#include <QWindow>
 
 #include <vector>
 #include <optional>
+
+// Prepare a Vulkan instance and surface for a Qt window
+// Creates the QVulkanInstance (m_Qinstance) and the VkSurfaceKHR (m_surface)
+// then the caller can call init(enableValidation) to pick physical device and create logical device.
 
 
 struct QueueFamilyIndices {
@@ -43,12 +50,18 @@ public:
 	VulkanContext() {};
 	~VulkanContext() {};
 
-    void init(GLFWwindow* window, bool enableValidation);
+
+	void init(bool enableValidation);
     void cleanup() noexcept;
+
+    // Create and initialize the QVulkanInstance and window surface
+    void prepareInstanceForWindow(QWindow* window, bool enableValidation);
+
 
 	VkInstance getInstance() const { return m_instance; }
     VkDevice getDevice() const { return m_device; }
     VkPhysicalDevice getPhysicalDevice() const { return m_physicalDevice; }
+	void setSurface(VkSurfaceKHR surface) { m_surface = surface;};
     VkSurfaceKHR getSurface() const { return m_surface; }
     VkQueue getGraphicsQueue() const { return m_graphicsQueue; }
     VkQueue getPresentQueue() const { return m_presentQueue; }
@@ -67,6 +80,7 @@ public:
 private:
 	VulkanDebug m_debug;
 
+	QVulkanInstance m_Qinstance;
 	VkInstance m_instance = VK_NULL_HANDLE;
 	VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
@@ -80,8 +94,7 @@ private:
 	VkSampleCountFlagBits m_msaaSamples;
 	VkSampleCountFlagBits getMaxMsaa();
 
-	void createInstance(bool enableValidationLayers);
-	void createSurface(GLFWwindow* window);
+	//void createInstance(bool enableValidationLayers);
 	void pickPhysicalDevice();
 	void createLogicalDevice(bool enableValidationLayers);
 
